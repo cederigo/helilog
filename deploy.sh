@@ -24,7 +24,7 @@ docker-compose down
 
 # Build and start containers
 echo "🏗️  Building containers..."
-docker-compose build --no-cache
+docker-compose build
 
 echo "▶️  Starting containers..."
 docker-compose up -d
