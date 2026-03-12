@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Helicopter {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  model        String
+  manufacturer String?
+  rotorDiameter Float?
+  weight       Float?
+  totalHours   Float    @default(0)
+  maintenanceInterval Float?
+  lastMaintenance     DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  flights      Flight[]
+  maintenance  MaintenanceRecord[]
+
+  @@index([name])
+}
+
+model Flight {
+  id           Int      @id @default(autoincrement())
+  helicopterId Int
+  date         DateTime
+  duration     Int      // in minutes
+  batteryCycles Int?
+  flightMode   String?  // 3D, Sport, GPS, Manual
+  weather      String?
+  temperature  Float?
+  windSpeed    Float?
+  notes        String?
+  location     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  helicopter   Helicopter @relation(fields: [helicopterId], references: [id], onDelete: Cascade)
+
+  @@index([helicopterId])
+  @@index([date])
+}
+
+model MaintenanceRecord {
+  id           Int      @id @default(autoincrement())
+  helicopterId Int
+  date         DateTime
+  description  String
+  hoursAtMaintenance Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  helicopter   Helicopter @relation(fields: [helicopterId], references: [id], onDelete: Cascade)
+
+  @@index([helicopterId])
+  @@index([date])
+}
