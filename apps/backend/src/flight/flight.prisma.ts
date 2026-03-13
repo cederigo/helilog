@@ -1,7 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { FlightRepository } from './flight.repository'
 import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
-import { serializeDates } from '../shared/utils'
 
 export class PrismaFlightRepository implements FlightRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -9,10 +8,9 @@ export class PrismaFlightRepository implements FlightRepository {
   async findMany(
     filters: FlightFilters,
     pagination: { page: number; limit: number },
-  ): Promise<{ flights: FlightWithHelicopter[]; total: number }> {
+  ) {
     const where: Prisma.FlightWhereInput = {}
 
-    if (filters.helicopterId) where.helicopterId = filters.helicopterId
     if (filters.startDate || filters.endDate) {
       where.date = {}
       if (filters.startDate) (where.date as Prisma.DateTimeFilter).gte = filters.startDate
@@ -40,25 +38,22 @@ export class PrismaFlightRepository implements FlightRepository {
       this.prisma.flight.count({ where }),
     ])
 
-    return { flights: rows.map(serializeDates), total }
+    return { flights: rows, total }
   }
 
   async findById(id: number): Promise<FlightWithHelicopter | null> {
-    const row = await this.prisma.flight.findUnique({
+    return this.prisma.flight.findUnique({
       where: { id },
       include: { helicopter: true },
     })
-    return row ? serializeDates(row) : null
   }
 
   async create(input: CreateFlightInput): Promise<Flight> {
-    const row = await this.prisma.flight.create({ data: input })
-    return serializeDates(row)
+    return this.prisma.flight.create({ data: input })
   }
 
   async update(id: number, input: UpdateFlightInput): Promise<Flight> {
-    const row = await this.prisma.flight.update({ where: { id }, data: input })
-    return serializeDates(row)
+    return this.prisma.flight.update({ where: { id }, data: input })
   }
 
   async delete(id: number): Promise<void> {
@@ -78,11 +73,10 @@ export class PrismaFlightRepository implements FlightRepository {
   }
 
   async findRecent(limit: number): Promise<FlightWithHelicopter[]> {
-    const rows = await this.prisma.flight.findMany({
+    return this.prisma.flight.findMany({
       take: limit,
       orderBy: { date: 'desc' },
       include: { helicopter: { select: { id: true, name: true, model: true } } },
     })
-    return rows.map(serializeDates)
   }
 }

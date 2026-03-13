@@ -1,48 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { flightApi, flightKeys } from '../lib/api'
+import { flightApi, flightKeys, type FlightQueryInput } from '../lib/api'
 
-type Filters = {
-  helicopterId: string
-  startDate: string
-  endDate: string
-  flightMode: string
-  minDuration: string
-  maxDuration: string
-}
-
-const emptyFilters: Filters = {
-  helicopterId: '',
-  startDate: '',
-  endDate: '',
-  flightMode: '',
-  minDuration: '',
-  maxDuration: '',
-}
-
-function toQueryParams(filters: Filters): Record<string, string> {
-  const params: Record<string, string> = {}
-  if (filters.helicopterId) params.helicopterId = filters.helicopterId
-  if (filters.startDate) params.startDate = filters.startDate
-  if (filters.endDate) params.endDate = filters.endDate
-  if (filters.flightMode) params.flightMode = filters.flightMode
-  if (filters.minDuration) params.minDuration = filters.minDuration
-  if (filters.maxDuration) params.maxDuration = filters.maxDuration
-  return params
-}
+const emptyFilters: FlightQueryInput = {}
 
 export default function FlightList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [appliedFilters, setAppliedFilters] = useState<Filters>(emptyFilters)
-  const [draftFilters, setDraftFilters] = useState<Filters>(emptyFilters)
-
-  const params = toQueryParams(appliedFilters)
+  const [appliedFilters, setAppliedFilters] = useState<Partial<FlightQueryInput>>(emptyFilters)
+  const [draftFilters, setDraftFilters] = useState<FlightQueryInput>(emptyFilters)
 
   const { data, isPending, error } = useQuery({
-    queryKey: flightKeys.all(params),
-    queryFn: () => flightApi.getAll(params),
+    queryKey: flightKeys.all(appliedFilters),
+    queryFn: () => flightApi.getAll(appliedFilters),
   })
 
   const deleteMutation = useMutation({
@@ -53,7 +24,7 @@ export default function FlightList() {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setDraftFilters(prev => ({ ...prev, [name]: value }))
+    setDraftFilters(prev => ({ ...prev, [name]: value || undefined }))
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -93,7 +64,7 @@ export default function FlightList() {
               type="date"
               id="startDate"
               name="startDate"
-              value={draftFilters.startDate}
+              value={draftFilters.startDate ?? ''}
               onChange={handleFilterChange}
             />
           </div>
@@ -103,7 +74,7 @@ export default function FlightList() {
               type="date"
               id="endDate"
               name="endDate"
-              value={draftFilters.endDate}
+              value={draftFilters.endDate ?? ''}
               onChange={handleFilterChange}
             />
           </div>
@@ -112,7 +83,7 @@ export default function FlightList() {
             <select
               id="flightMode"
               name="flightMode"
-              value={draftFilters.flightMode}
+              value={draftFilters.flightMode ?? ''}
               onChange={handleFilterChange}
             >
               <option value="">All</option>

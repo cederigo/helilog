@@ -26,6 +26,19 @@ export const createFlightSchema = z.object({
 
 export const updateFlightSchema = createFlightSchema.partial()
 
+export const flightQuerySchema = z.object({
+  // helicopterId: z.number().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  sortBy: z.enum(['date', 'duration']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  search: z.string().optional(),
+  flightMode: z.string().optional(),
+  weather: z.string().optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
+})
+
 export const createMaintenanceSchema = z.object({
   helicopterId: z.number().int().positive(),
   date: z.iso.datetime(),
@@ -38,3 +51,4 @@ export type UpdateHelicopterInput = z.infer<typeof updateHelicopterSchema>
 export type CreateFlightInput = z.infer<typeof createFlightSchema>
 export type UpdateFlightInput = z.infer<typeof updateFlightSchema>
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>
+export type FlightQueryInput = z.infer<typeof flightQuerySchema>

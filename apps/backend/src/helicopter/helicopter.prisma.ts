@@ -6,40 +6,34 @@ import {
   CreateHelicopterInput,
   UpdateHelicopterInput,
 } from './helicopter.types'
-import { serializeDates } from '../shared/utils'
 
 export class PrismaHelicopterRepository implements HelicopterRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findAll(): Promise<Helicopter[]> {
-    const rows = await this.prisma.helicopter.findMany({ orderBy: { name: 'asc' } })
-    return rows.map(serializeDates)
+    return this.prisma.helicopter.findMany({ orderBy: { name: 'asc' } })
   }
 
   async findById(id: number): Promise<HelicopterDetail | null> {
-    const row = await this.prisma.helicopter.findUnique({
+    return this.prisma.helicopter.findUnique({
       where: { id },
       include: {
         flights: { orderBy: { date: 'desc' }, take: 10 },
         maintenance: { orderBy: { date: 'desc' } },
       },
     })
-    return row ? serializeDates(row) : null
   }
 
   async findByName(name: string): Promise<Helicopter | null> {
-    const row = await this.prisma.helicopter.findUnique({ where: { name } })
-    return row ? serializeDates(row) : null
+    return this.prisma.helicopter.findUnique({ where: { name } })
   }
 
   async create(input: CreateHelicopterInput): Promise<Helicopter> {
-    const row = await this.prisma.helicopter.create({ data: { ...input, totalHours: 0 } })
-    return serializeDates(row)
+    return this.prisma.helicopter.create({ data: { ...input, totalHours: 0 } })
   }
 
   async update(id: number, input: UpdateHelicopterInput): Promise<Helicopter> {
-    const row = await this.prisma.helicopter.update({ where: { id }, data: input })
-    return serializeDates(row)
+    return this.prisma.helicopter.update({ where: { id }, data: input })
   }
 
   async delete(id: number): Promise<void> {

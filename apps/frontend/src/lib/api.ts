@@ -1,5 +1,8 @@
 import { hc } from 'hono/client'
 import type { AppType } from '@helilog/backend'
+import type { FlightQueryInput } from '@helilog/shared'
+
+export type { FlightQueryInput }
 
 // VITE_API_URL is the server root (e.g. http://localhost:3000)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -38,8 +41,8 @@ export const helicopterApi = {
 
 // Flight API
 export const flightApi = {
-  getAll: async (params?: Record<string, string>) => {
-    const res = await client.api.flights.$get({ query: params ?? {} })
+  getAll: async (query: FlightQueryInput) => {
+    const res = await client.api.flights.$get({ query })
     return res.json()
   },
   getById: async (id: number) => {
@@ -111,7 +114,7 @@ export const helicopterKeys = {
 }
 
 export const flightKeys = {
-  all: (params?: Record<string, string>) => ['flights', params ?? {}] as const,
+  all: (params?: FlightQueryInput) => ['flights', params ?? {}] as const,
   detail: (id: number) => ['flights', id] as const,
 }
 

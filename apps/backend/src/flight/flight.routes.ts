@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { flightService } from '../container'
-import { createFlightSchema as baseCreateFlightSchema, updateFlightSchema as baseUpdateFlightSchema } from '@helilog/shared'
+import { createFlightSchema as baseCreateFlightSchema, updateFlightSchema as baseUpdateFlightSchema, flightQuerySchema as baseFlightQuerySchema } from '@helilog/shared'
 import { FlightNotFoundError } from './flight.errors'
 import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
 
@@ -12,49 +12,26 @@ const createFlightSchema = baseCreateFlightSchema.extend({
 const updateFlightSchema = baseUpdateFlightSchema.extend({
   date: z.iso.datetime().transform(s => new Date(s)).optional(),
 })
+const flightQuerySchema = baseFlightQuerySchema.extend({
+  helicopterId: z.string().transform(s => parseInt(s)).optional(),
+  startDate: z.string().transform(s => new Date(s)).optional(),
+  endDate: z.string().transform(s => new Date(s)).optional(),
+  page: z.string().optional().transform(s => s ? parseInt(s) : 1),
+  limit: z.string().optional().transform(s => s ? parseInt(s) : 50),
+})
 
 const flights = new Hono()
-  .get('/', async (c) => {
-    const {
-      helicopterId,
-      startDate,
-      endDate,
-      sortBy,
-      sortOrder,
-      search,
-      flightMode,
-      weather,
-      page = '1',
-      limit = '50',
-    } = c.req.query()
+  .get('/', zValidator('query', flightQuerySchema), async (c) => {
+    const { startDate, endDate, sortBy, sortOrder, search, flightMode, weather, page, limit } = c.req.valid('query')
 
-    const filters = {
-      helicopterId: helicopterId ? parseInt(helicopterId) : undefined,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      sortBy: sortBy as 'date' | 'duration' | undefined,
-      sortOrder: sortOrder as 'asc' | 'desc' | undefined,
-      search,
-      flightMode,
-      weather,
-    }
-
-    const pageNum = parseInt(page)
-    const pageSize = parseInt(limit)
-
-    const { flights: flightList, total } = await flightService.list(filters, {
-      page: pageNum,
-      limit: pageSize,
-    })
+    const { flights: flightList, total } = await flightService.list(
+      { startDate, endDate, sortBy, sortOrder, search, flightMode, weather },
+      { page, limit },
+    )
 
     return c.json({
       flights: flightList,
-      pagination: {
-        page: pageNum,
-        limit: pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   })
   .get('/:id', async (c) => {
