@@ -13,12 +13,14 @@ RC helicopter pilots need a way to track their flights, monitor flight hours, an
 ## Capabilities
 
 ### New Capabilities
+
 - `flight-logging`: Create, edit, and delete flight log entries with helicopter-specific metadata (flight duration, battery cycles, flight mode, conditions)
 - `flight-history`: View, search, and filter historical flight logs with sorting and pagination
 - `heli-management`: Add, edit, and track multiple RC helicopters with individual flight hour counters and maintenance schedules
 - `dashboard`: Display flight statistics, recent flights, and maintenance alerts on a main dashboard
 
 ### Modified Capabilities
+
 <!-- No existing capabilities being modified - this is a new application -->
 
 ## Impact

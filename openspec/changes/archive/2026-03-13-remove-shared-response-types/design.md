@@ -9,6 +9,7 @@ The Zod schemas (`createHelicopterSchema`, `createFlightSchema`, `createMaintena
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Remove `as` type assertions from `api.ts`; let Hono RPC client infer response types from `AppType`
 - Export derived named type helpers from `api.ts` so components have clean type names to import
 - Export query key constants from `api.ts` for use with TanStack Query
@@ -16,6 +17,7 @@ The Zod schemas (`createHelicopterSchema`, `createFlightSchema`, `createMaintena
 - Remove redundant response interfaces from `@helilog/shared`
 
 **Non-Goals:**
+
 - Advanced TanStack Query features (infinite queries, optimistic updates, prefetching)
 - Changing any backend routes or serialization
 - Removing the `packages/shared` package itself

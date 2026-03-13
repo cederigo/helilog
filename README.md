@@ -13,12 +13,14 @@ A full-stack web application for logging and tracking RC helicopter flights, mai
 ## Tech Stack
 
 ### Backend
+
 - **Hono** - Fast, lightweight TypeScript web framework
 - **Prisma** - Type-safe ORM with SQLite database
 - **Zod** - Schema validation
 - **LibSQL** - SQLite database adapter
 
 ### Frontend
+
 - **React 19** - UI framework
 - **Vite 8** - Build tool and dev server
 - **TypeScript** - Type safety
@@ -66,22 +68,24 @@ helilog/
 1. **Clone the repository** (or use existing project)
 
 2. **Setup Backend**
+
    ```bash
    cd backend
    npm install
-   
+
    # Create and migrate database
    npm run db:migrate
-   
+
    # Generate Prisma Client
    npx prisma generate
    ```
 
 3. **Setup Frontend**
+
    ```bash
    cd frontend
    npm install
-   
+
    # Copy environment variables
    cp .env.example .env.local
    ```
@@ -89,32 +93,39 @@ helilog/
 ### Running the Application
 
 **Start Backend** (from `backend/` directory):
+
 ```bash
 npm run dev
 ```
+
 Backend runs on http://localhost:3000
 
 **Start Frontend** (from `frontend/` directory):
+
 ```bash
 npm run dev
 ```
+
 Frontend runs on http://localhost:5173
 
 ### Database Management
 
 **Create a new migration:**
+
 ```bash
 cd backend
 npm run db:migrate -- --name your_migration_name
 ```
 
 **Reset database (WARNING: deletes all data):**
+
 ```bash
 cd backend
 npm run db:reset
 ```
 
 **Open Prisma Studio (database GUI):**
+
 ```bash
 cd backend
 npm run db:studio
@@ -123,6 +134,7 @@ npm run db:studio
 ## API Endpoints
 
 ### Helicopters
+
 - `GET /api/helicopters` - List all helicopters
 - `GET /api/helicopters/:id` - Get helicopter details
 - `POST /api/helicopters` - Create helicopter
@@ -130,6 +142,7 @@ npm run db:studio
 - `DELETE /api/helicopters/:id` - Delete helicopter
 
 ### Flights
+
 - `GET /api/flights` - List flights (with filtering)
   - Query params: `helicopterId`, `startDate`, `endDate`, `flightMode`, `minDuration`, `maxDuration`
 - `GET /api/flights/:id` - Get flight details
@@ -138,12 +151,14 @@ npm run db:studio
 - `DELETE /api/flights/:id` - Delete flight
 
 ### Statistics
+
 - `GET /api/stats` - Get overall statistics
 - `GET /api/stats/recent` - Get recent flights
 - `GET /api/stats/trends/weekly` - Get weekly trends
 - `GET /api/stats/trends/monthly` - Get monthly trends
 
 ### Maintenance
+
 - `POST /api/maintenance` - Record maintenance
 - `GET /api/helicopters/:id/maintenance` - Get maintenance history
 - `GET /api/maintenance/alerts` - Get maintenance alerts
@@ -151,6 +166,7 @@ npm run db:studio
 ## Development
 
 ### Backend Scripts
+
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build for production
 - `npm start` - Run production build
@@ -159,6 +175,7 @@ npm run db:studio
 - `npm run db:studio` - Open Prisma Studio
 
 ### Frontend Scripts
+
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
@@ -167,6 +184,7 @@ npm run db:studio
 ## Database Schema
 
 ### Helicopter
+
 - `id` - Auto-incrementing ID
 - `name` - Unique helicopter name
 - `model` - Model name
@@ -178,6 +196,7 @@ npm run db:studio
 - `lastMaintenance` - Last maintenance date
 
 ### Flight
+
 - `id` - Auto-incrementing ID
 - `helicopterId` - Foreign key to Helicopter
 - `date` - Flight date
@@ -191,6 +210,7 @@ npm run db:studio
 - `location` - Optional flight location
 
 ### MaintenanceRecord
+
 - `id` - Auto-incrementing ID
 - `helicopterId` - Foreign key to Helicopter
 - `date` - Maintenance date
@@ -212,22 +232,24 @@ The easiest way to deploy HeliLog is using Docker Compose:
    - Update environment variables in `.env.production` files
 
 2. **Configure Environment**
+
    ```bash
    # Backend: backend/.env.production
    NODE_ENV=production
    PORT=3000
    DATABASE_URL=file:/data/prod.db
    CORS_ORIGIN=http://your-domain.com
-   
+
    # Frontend: frontend/.env.production
    VITE_API_URL=http://your-domain.com:3000/api
    ```
 
 3. **Deploy**
+
    ```bash
    # Run the deployment script
    ./deploy.sh
-   
+
    # Or manually with docker-compose
    docker-compose up -d
    ```
@@ -237,16 +259,17 @@ The easiest way to deploy HeliLog is using Docker Compose:
    - Backend: http://localhost:3000
 
 5. **Manage Deployment**
+
    ```bash
    # View logs
    docker-compose logs -f
-   
+
    # Restart services
    docker-compose restart
-   
+
    # Stop services
    docker-compose down
-   
+
    # Update application
    git pull
    docker-compose build --no-cache
@@ -256,6 +279,7 @@ The easiest way to deploy HeliLog is using Docker Compose:
 ### Manual Production Build
 
 **Backend:**
+
 ```bash
 cd backend
 npm run build
@@ -263,6 +287,7 @@ NODE_ENV=production npm start
 ```
 
 **Frontend:**
+
 ```bash
 cd frontend
 npm run build

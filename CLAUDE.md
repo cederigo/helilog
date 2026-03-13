@@ -21,14 +21,17 @@ packages/shared/ # Shared TypeScript types and Zod schemas
 ## Commands
 
 ### Root (run from repo root)
+
 ```bash
 pnpm dev         # Start all dev servers concurrently (backend + frontend)
 pnpm build       # Build all packages in dependency order
 pnpm lint        # Lint all packages
 pnpm typecheck   # TypeScript check all packages
+pnpm format      # Format all packages
 ```
 
 ### Backend (`cd apps/backend`)
+
 ```bash
 pnpm dev         # Start dev server with hot reload (tsx watch)
 pnpm build       # Emit .d.ts declarations + esbuild bundle to dist/
@@ -39,6 +42,7 @@ pnpm db:studio   # Open Prisma Studio GUI
 ```
 
 ### Frontend (`cd apps/frontend`)
+
 ```bash
 pnpm dev         # Start Vite dev server on :5173
 pnpm build       # TypeScript check + Vite build
@@ -47,6 +51,7 @@ pnpm preview     # Preview production build
 ```
 
 ### Database migration workflow
+
 ```bash
 cd apps/backend
 pnpm db:migrate -- --name your_migration_name
@@ -55,6 +60,7 @@ pnpm db:migrate -- --name your_migration_name
 ## Architecture
 
 ### Backend (`apps/backend`)
+
 - **Entry point**: `apps/backend/src/index.ts` — sets up Hono app with CORS, logger middleware, mounts routes under `/api/`. Exports `AppType` for Hono RPC client.
 - **AppType**: `export type AppType = typeof app` — the fully-typed Hono router, used by the frontend's `hc<AppType>()` client
 - **Database**: `apps/backend/src/db.ts` — singleton Prisma client using `@prisma/adapter-libsql`; `DATABASE_URL` defaults to `file:./dev.db`
@@ -62,12 +68,14 @@ pnpm db:migrate -- --name your_migration_name
 - **Schema**: `apps/backend/prisma/schema.prisma` — three models: `Helicopter`, `Flight`, `MaintenanceRecord`
 
 ### Frontend (`apps/frontend`)
+
 - **Entry**: `apps/frontend/src/main.tsx` → `App.tsx`
 - **Routing**: React Router v7, routes defined in `App.tsx`
 - **API client**: `apps/frontend/src/lib/api.ts` — Hono RPC client using `hc<AppType>()` from `hono/client`. Base URL from `VITE_API_URL` env var (default `http://localhost:3000`). Exports `helicopterApi`, `flightApi`, `statsApi`, `maintenanceApi`.
 - **Components**: `apps/frontend/src/components/` — page-level components
 
 ### Shared (`packages/shared`)
+
 - **Types & Zod schemas**: `packages/shared/src/index.ts` — shared TypeScript interfaces and Zod validation schemas used by both backend and frontend
 
 ## Hono RPC
@@ -77,10 +85,12 @@ The backend exports `AppType` from `apps/backend/src/index.ts`. The frontend imp
 ## Environment Variables
 
 **Backend** (`apps/backend/.env`):
+
 - `DATABASE_URL` — SQLite file path (default: `file:./dev.db`)
 - `CORS_ORIGIN` — comma-separated origins (default: `http://localhost:5173,http://localhost:3000`)
 
 **Frontend** (`apps/frontend/.env.local`):
+
 - `VITE_API_URL` — backend server root URL, **without `/api` suffix** (default: `http://localhost:3000`)
 
 ## Docker

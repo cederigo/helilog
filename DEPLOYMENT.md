@@ -3,6 +3,7 @@
 ## Quick Start with Docker
 
 ### Prerequisites
+
 - Docker 20.10+ installed
 - Docker Compose 2.0+ installed
 - 1GB RAM minimum
@@ -15,6 +16,7 @@
 ```
 
 That's it! The application will be available at:
+
 - **Frontend**: http://localhost
 - **Backend API**: http://localhost:3000
 
@@ -25,27 +27,31 @@ That's it! The application will be available at:
 ### Option 1: Docker Compose (Recommended)
 
 1. **Clone the repository**
+
    ```bash
    git clone <repo-url>
    cd helilog
    ```
 
 2. **Configure environment variables**
-   
+
    Edit `backend/.env.production`:
+
    ```env
    NODE_ENV=production
    PORT=3000
    DATABASE_URL=file:/data/prod.db
    CORS_ORIGIN=http://localhost
    ```
-   
+
    Edit `frontend/.env.production`:
+
    ```env
    VITE_API_URL=http://localhost:3000/api
    ```
 
 3. **Deploy**
+
    ```bash
    docker-compose up -d
    ```
@@ -62,17 +68,20 @@ That's it! The application will be available at:
 #### Backend Deployment
 
 1. **Install dependencies**
+
    ```bash
    cd backend
    npm ci --only=production
    ```
 
 2. **Build**
+
    ```bash
    npm run build
    ```
 
 3. **Setup database**
+
    ```bash
    npx prisma generate
    npx prisma migrate deploy
@@ -86,34 +95,38 @@ That's it! The application will be available at:
 #### Frontend Deployment
 
 1. **Install dependencies**
+
    ```bash
    cd frontend
    npm ci
    ```
 
 2. **Build**
+
    ```bash
    npm run build
    ```
 
 3. **Serve**
-   
+
    The `dist/` folder contains static files. Serve with any web server:
-   
+
    **With Nginx:**
+
    ```nginx
    server {
        listen 80;
        root /path/to/helilog/frontend/dist;
        index index.html;
-       
+
        location / {
            try_files $uri $uri/ /index.html;
        }
    }
    ```
-   
+
    **With Node.js (serve package):**
+
    ```bash
    npm install -g serve
    serve -s dist -l 80
@@ -178,11 +191,13 @@ That's it! The application will be available at:
 ### Backup Database
 
 **SQLite (Docker):**
+
 ```bash
 docker-compose exec backend sqlite3 /data/prod.db .dump > backup.sql
 ```
 
 **Manual:**
+
 ```bash
 sqlite3 backend/prod.db .dump > backup.sql
 ```
@@ -196,6 +211,7 @@ sqlite3 backend/prod.db < backup.sql
 ### Migrate to PostgreSQL (Production Recommended)
 
 1. Update `backend/prisma/schema.prisma`:
+
    ```prisma
    datasource db {
      provider = "postgresql"
@@ -204,6 +220,7 @@ sqlite3 backend/prod.db < backup.sql
    ```
 
 2. Update DATABASE_URL:
+
    ```
    postgresql://user:password@host:5432/database
    ```
@@ -265,6 +282,7 @@ docker-compose restart
 ### Increase Backend Resources
 
 Edit `docker-compose.yml`:
+
 ```yaml
 services:
   backend:
@@ -295,6 +313,7 @@ Upload frontend `dist/` to CDN (Cloudflare, AWS CloudFront) for better performan
 ### SSL/TLS
 
 Use Let's Encrypt with Certbot:
+
 ```bash
 certbot --nginx -d yourdomain.com
 ```
@@ -353,6 +372,7 @@ docker-compose exec backend npx prisma migrate reset
 ## Support
 
 For issues or questions:
+
 1. Check the [README.md](README.md)
 2. Review logs with `docker-compose logs`
 3. Check [TEST_REPORT.md](TEST_REPORT.md) for validation steps

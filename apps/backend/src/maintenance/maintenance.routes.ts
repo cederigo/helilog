@@ -6,7 +6,7 @@ import { createMaintenanceSchema as baseCreateMaintenanceSchema } from '@helilog
 import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
 
 const createMaintenanceSchema = baseCreateMaintenanceSchema.extend({
-  date: z.iso.datetime().transform(s => new Date(s)),
+  date: z.iso.datetime().transform((s) => new Date(s)),
 })
 
 const maintenance = new Hono()

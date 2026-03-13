@@ -15,8 +15,12 @@ export default function Dashboard() {
     ],
   })
 
-  const isPending = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].some(q => q.isPending)
-  const error = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].find(q => q.error)?.error
+  const isPending = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].some(
+    (q) => q.isPending,
+  )
+  const error = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].find(
+    (q) => q.error,
+  )?.error
 
   if (isPending) return <div className="loading">Loading dashboard...</div>
   if (error) return <div className="error">Error: {error.message}</div>
@@ -114,7 +118,7 @@ export default function Dashboard() {
           ) : (
             <div className="trend-bars">
               {weeklyTrends.map((week, idx) => {
-                const maxCount = Math.max(...weeklyTrends.map(w => w.count), 1)
+                const maxCount = Math.max(...weeklyTrends.map((w) => w.count), 1)
                 const percentage = (week.count / maxCount) * 100
                 return (
                   <div key={idx} className="trend-bar-item">
@@ -124,7 +128,10 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="bar-date">
-                      {new Date(week.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(week.week).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </div>
                   </div>
                 )
@@ -140,17 +147,22 @@ export default function Dashboard() {
           ) : (
             <div className="trend-bars">
               {monthlyTrends.map((month, idx) => {
-                const maxHours = Math.max(...monthlyTrends.map(m => m.hours), 1)
+                const maxHours = Math.max(...monthlyTrends.map((m) => m.hours), 1)
                 const percentage = (month.hours / maxHours) * 100
                 return (
                   <div key={idx} className="trend-bar-item">
                     <div className="bar-container">
                       <div className="bar" style={{ width: `${percentage}%` }}>
-                        {month.hours > 0 && <span className="bar-label">{month.hours.toFixed(1)}h</span>}
+                        {month.hours > 0 && (
+                          <span className="bar-label">{month.hours.toFixed(1)}h</span>
+                        )}
                       </div>
                     </div>
                     <div className="bar-date">
-                      {new Date(month.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      {new Date(month.month + '-01').toLocaleDateString('en-US', {
+                        month: 'short',
+                        year: 'numeric',
+                      })}
                     </div>
                   </div>
                 )

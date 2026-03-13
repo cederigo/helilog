@@ -5,6 +5,7 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Build a responsive web application accessible from desktop and mobile devices
 - Provide intuitive flight logging with helicopter-specific metadata
 - Enable multi-helicopter tracking with individual flight hour counters
@@ -12,6 +13,7 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 - Support historical data search and filtering
 
 **Non-Goals:**
+
 - Multi-user collaboration or team features
 - Real-time flight telemetry integration
 - Mobile native applications (web-responsive only in initial version)
@@ -24,7 +26,8 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 
 **Decision**: Use a modern web stack with React frontend, Node hono backend, and SQLite database. Use typescript for type safety across the stack.
 
-**Rationale**: 
+**Rationale**:
+
 - React provides component reusability and good mobile responsiveness
 - Node hono enables full TypeScript stack for simpler development
 - SQLite offers lightweight relational data modeling for flights, helicopters, and relationships
@@ -35,6 +38,7 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 **Decision**: Implement a traditional client-server architecture with RESTful API.
 
 **Rationale**:
+
 - Straightforward separation of concerns
 - Easy to extend with mobile apps later
 - Standard API patterns for CRUD operations
@@ -45,6 +49,7 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 **Decision**: Three core entities - Helicopters, Flights, and MaintenanceRecords.
 
 **Rationale**:
+
 - Helicopters: Store heli specs, total flight hours, maintenance schedule
 - Flights: Link to specific helicopter, capture flight metadata (date, duration, conditions, notes)
 - MaintenanceRecords: Track maintenance actions per helicopter
@@ -55,6 +60,7 @@ This is a greenfield project for a web-based RC helicopter flight logging applic
 **Decision**: Use React Context API for application state, local storage for data persistence.
 
 **Rationale**:
+
 - Context API sufficient for single-user app without complex state interactions
 - Local storage provides simple persistence without backend auth complexity
 - Alternatives considered: Redux (over-engineered for this scale), backend session (requires auth implementation)

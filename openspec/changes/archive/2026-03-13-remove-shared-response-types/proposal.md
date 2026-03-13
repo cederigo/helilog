@@ -15,9 +15,11 @@ The `@helilog/shared` package contains response interfaces (`Helicopter`, `Fligh
 ## Capabilities
 
 ### New Capabilities
+
 - `tanstack-query`: Frontend data fetching uses TanStack Query (`useQuery`/`useMutation`) with automatic caching, loading, and error states
 
 ### Modified Capabilities
+
 - `hono-rpc-client`: `as` casts removed from `api.ts`; response types are inferred from `AppType`. Derived type helpers exported for component use.
 
 ## Impact

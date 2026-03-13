@@ -1,14 +1,17 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { FlightRepository } from './flight.repository'
-import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
+import {
+  Flight,
+  FlightWithHelicopter,
+  CreateFlightInput,
+  UpdateFlightInput,
+  FlightFilters,
+} from './flight.types'
 
 export class PrismaFlightRepository implements FlightRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findMany(
-    filters: FlightFilters,
-    pagination: { page: number; limit: number },
-  ) {
+  async findMany(filters: FlightFilters, pagination: { page: number; limit: number }) {
     const where: Prisma.FlightWhereInput = {}
 
     if (filters.startDate || filters.endDate) {

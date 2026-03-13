@@ -5,6 +5,7 @@ The backend currently has 4 route files (`helicopters.ts`, `flights.ts`, `mainte
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Domain-driven folder structure: one module per domain concept
 - Repository interfaces that decouple services from Prisma, enabling unit tests with mocks
 - Service classes that own all business logic, injected with repositories via constructor
@@ -13,6 +14,7 @@ The backend currently has 4 route files (`helicopters.ts`, `flights.ts`, `mainte
 - No new runtime dependencies
 
 **Non-Goals:**
+
 - Adding tests (this change sets up the structure; tests come after)
 - Changing the database schema or API surface
 - Introducing a DI container library

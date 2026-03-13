@@ -20,10 +20,13 @@ export class StatsService {
     const averageDuration = totalFlights > 0 ? totalMinutes / totalFlights : 0
     const flightsThisMonth = allFlights.filter((f) => f.date >= startOfMonth).length
 
-    const flightsByHeli = allFlights.reduce((acc, f) => {
-      acc[f.helicopterId] = (acc[f.helicopterId] || 0) + 1
-      return acc
-    }, {} as Record<number, number>)
+    const flightsByHeli = allFlights.reduce(
+      (acc, f) => {
+        acc[f.helicopterId] = (acc[f.helicopterId] || 0) + 1
+        return acc
+      },
+      {} as Record<number, number>,
+    )
 
     let mostFlownHeliId: number | null = null
     let maxFlights = 0

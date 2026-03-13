@@ -3,7 +3,7 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const dbUrl = process.env.DATABASE_URL || 'file:./dev.db'
 
-const adapter = new PrismaLibSql({url: dbUrl})
+const adapter = new PrismaLibSql({ url: dbUrl })
 
 const prismaClientSingleton = () => {
   return new PrismaClient({ adapter })

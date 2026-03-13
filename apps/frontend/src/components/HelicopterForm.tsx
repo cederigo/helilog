@@ -3,7 +3,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { helicopterApi, helicopterKeys } from '../lib/api'
-import { createHelicopterSchema, type CreateHelicopterInput, type UpdateHelicopterInput } from '@helilog/shared'
+import {
+  createHelicopterSchema,
+  type CreateHelicopterInput,
+  type UpdateHelicopterInput,
+} from '@helilog/shared'
 
 export default function HelicopterForm() {
   const navigate = useNavigate()
@@ -46,9 +50,11 @@ export default function HelicopterForm() {
         name: data.name.trim(),
         model: data.model.trim(),
         ...(data.manufacturer && { manufacturer: data.manufacturer.trim() }),
-        ...(data.rotorDiameter != null && !isNaN(data.rotorDiameter) && { rotorDiameter: data.rotorDiameter }),
+        ...(data.rotorDiameter != null &&
+          !isNaN(data.rotorDiameter) && { rotorDiameter: data.rotorDiameter }),
         ...(data.weight != null && !isNaN(data.weight) && { weight: data.weight }),
-        ...(data.maintenanceInterval != null && !isNaN(data.maintenanceInterval) && { maintenanceInterval: data.maintenanceInterval }),
+        ...(data.maintenanceInterval != null &&
+          !isNaN(data.maintenanceInterval) && { maintenanceInterval: data.maintenanceInterval }),
       }
       if (isEditMode && id) {
         return helicopterApi.update(parseInt(id), payload)
@@ -99,11 +105,7 @@ export default function HelicopterForm() {
 
         <div className="form-group">
           <label htmlFor="manufacturer">Manufacturer</label>
-          <input
-            type="text"
-            id="manufacturer"
-            {...register('manufacturer')}
-          />
+          <input type="text" id="manufacturer" {...register('manufacturer')} />
         </div>
 
         <div className="form-row">
@@ -112,10 +114,14 @@ export default function HelicopterForm() {
             <input
               type="number"
               id="rotorDiameter"
-              {...register('rotorDiameter', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+              {...register('rotorDiameter', {
+                setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+              })}
               className={errors.rotorDiameter ? 'error' : ''}
             />
-            {errors.rotorDiameter && <span className="error-message">{errors.rotorDiameter.message}</span>}
+            {errors.rotorDiameter && (
+              <span className="error-message">{errors.rotorDiameter.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -124,7 +130,9 @@ export default function HelicopterForm() {
               type="number"
               step="0.01"
               id="weight"
-              {...register('weight', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+              {...register('weight', {
+                setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+              })}
               className={errors.weight ? 'error' : ''}
             />
             {errors.weight && <span className="error-message">{errors.weight.message}</span>}
@@ -137,10 +145,14 @@ export default function HelicopterForm() {
             type="number"
             step="0.1"
             id="maintenanceInterval"
-            {...register('maintenanceInterval', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+            {...register('maintenanceInterval', {
+              setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+            })}
             className={errors.maintenanceInterval ? 'error' : ''}
           />
-          {errors.maintenanceInterval && <span className="error-message">{errors.maintenanceInterval.message}</span>}
+          {errors.maintenanceInterval && (
+            <span className="error-message">{errors.maintenanceInterval.message}</span>
+          )}
         </div>
 
         <div className="form-actions">
@@ -148,7 +160,13 @@ export default function HelicopterForm() {
             Cancel
           </button>
           <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
-            {saveMutation.isPending ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Helicopter' : 'Create Helicopter')}
+            {saveMutation.isPending
+              ? isEditMode
+                ? 'Updating...'
+                : 'Creating...'
+              : isEditMode
+                ? 'Update Helicopter'
+                : 'Create Helicopter'}
           </button>
         </div>
       </form>

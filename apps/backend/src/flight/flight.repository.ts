@@ -1,4 +1,10 @@
-import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
+import {
+  Flight,
+  FlightWithHelicopter,
+  CreateFlightInput,
+  UpdateFlightInput,
+  FlightFilters,
+} from './flight.types'
 import { PaginationParams } from '../shared/types'
 
 export interface FlightRepository {

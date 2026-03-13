@@ -105,7 +105,9 @@ export default function FlightForm() {
               </option>
             ))}
           </select>
-          {errors.helicopterId && <span className="error-message">{errors.helicopterId.message}</span>}
+          {errors.helicopterId && (
+            <span className="error-message">{errors.helicopterId.message}</span>
+          )}
         </div>
 
         <div className="form-row">
@@ -136,10 +138,7 @@ export default function FlightForm() {
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="flightMode">Flight Mode</label>
-            <select
-              id="flightMode"
-              {...register('flightMode')}
-            >
+            <select id="flightMode" {...register('flightMode')}>
               <option value="">Select mode</option>
               <option value="3D">3D</option>
               <option value="Sport">Sport</option>
@@ -153,10 +152,14 @@ export default function FlightForm() {
             <input
               type="number"
               id="batteryCycles"
-              {...register('batteryCycles', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+              {...register('batteryCycles', {
+                setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+              })}
               className={errors.batteryCycles ? 'error' : ''}
             />
-            {errors.batteryCycles && <span className="error-message">{errors.batteryCycles.message}</span>}
+            {errors.batteryCycles && (
+              <span className="error-message">{errors.batteryCycles.message}</span>
+            )}
           </div>
         </div>
 
@@ -187,7 +190,9 @@ export default function FlightForm() {
               type="number"
               step="0.1"
               id="temperature"
-              {...register('temperature', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+              {...register('temperature', {
+                setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+              })}
             />
           </div>
 
@@ -197,7 +202,9 @@ export default function FlightForm() {
               type="number"
               step="0.1"
               id="windSpeed"
-              {...register('windSpeed', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
+              {...register('windSpeed', {
+                setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+              })}
               className={errors.windSpeed ? 'error' : ''}
             />
             {errors.windSpeed && <span className="error-message">{errors.windSpeed.message}</span>}
@@ -219,7 +226,13 @@ export default function FlightForm() {
             Cancel
           </button>
           <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
-            {saveMutation.isPending ? (isEditMode ? 'Updating...' : 'Logging...') : (isEditMode ? 'Update Flight' : 'Log Flight')}
+            {saveMutation.isPending
+              ? isEditMode
+                ? 'Updating...'
+                : 'Logging...'
+              : isEditMode
+                ? 'Update Flight'
+                : 'Log Flight'}
           </button>
         </div>
       </form>

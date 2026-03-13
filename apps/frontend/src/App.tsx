@@ -16,9 +16,15 @@ function App() {
             <Link to="/">HeliLog</Link>
           </div>
           <ul className="nav-links">
-            <li><Link to="/">Dashboard</Link></li>
-            <li><Link to="/helicopters">Helicopters</Link></li>
-            <li><Link to="/flights">Flights</Link></li>
+            <li>
+              <Link to="/">Dashboard</Link>
+            </li>
+            <li>
+              <Link to="/helicopters">Helicopters</Link>
+            </li>
+            <li>
+              <Link to="/flights">Flights</Link>
+            </li>
           </ul>
         </nav>
 

@@ -6,10 +6,5 @@ await build({
   platform: 'node',
   format: 'esm',
   outfile: 'dist/index.js',
-  external: [
-    '@prisma/client',
-    '@prisma/adapter-libsql',
-    '@libsql/client',
-    'dotenv',
-  ],
+  external: ['@prisma/client', '@prisma/adapter-libsql', '@libsql/client', 'dotenv'],
 })

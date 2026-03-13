@@ -27,7 +27,10 @@ export const helicopterApi = {
     if ('error' in body) throw new Error(body.error)
     return body
   },
-  update: async (id: number, data: Parameters<typeof client.api.helicopters[':id']['$put']>[0]['json']) => {
+  update: async (
+    id: number,
+    data: Parameters<(typeof client.api.helicopters)[':id']['$put']>[0]['json'],
+  ) => {
     const res = await client.api.helicopters[':id'].$put({ param: { id: String(id) }, json: data })
     const body = await res.json()
     if ('error' in body) throw new Error(body.error)
@@ -57,7 +60,10 @@ export const flightApi = {
     if ('error' in body) throw new Error(body.error)
     return body
   },
-  update: async (id: number, data: Parameters<typeof client.api.flights[':id']['$put']>[0]['json']) => {
+  update: async (
+    id: number,
+    data: Parameters<(typeof client.api.flights)[':id']['$put']>[0]['json'],
+  ) => {
     const res = await client.api.flights[':id'].$put({ param: { id: String(id) }, json: data })
     const body = await res.json()
     if ('error' in body) throw new Error(body.error)
@@ -98,7 +104,9 @@ export const maintenanceApi = {
     return body
   },
   getForHelicopter: async (id: number) => {
-    const res = await client.api.maintenance.helicopters[':id'].maintenance.$get({ param: { id: String(id) } })
+    const res = await client.api.maintenance.helicopters[':id'].maintenance.$get({
+      param: { id: String(id) },
+    })
     return res.json()
   },
   getAlerts: async () => {

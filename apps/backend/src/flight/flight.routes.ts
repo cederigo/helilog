@@ -2,27 +2,50 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { flightService } from '../container'
-import { createFlightSchema as baseCreateFlightSchema, updateFlightSchema as baseUpdateFlightSchema, flightQuerySchema as baseFlightQuerySchema } from '@helilog/shared'
+import {
+  createFlightSchema as baseCreateFlightSchema,
+  updateFlightSchema as baseUpdateFlightSchema,
+  flightQuerySchema as baseFlightQuerySchema,
+} from '@helilog/shared'
 import { FlightNotFoundError } from './flight.errors'
 import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
 
 const createFlightSchema = baseCreateFlightSchema.extend({
-  date: z.iso.datetime().transform(s => new Date(s)),
+  date: z.iso.datetime().transform((s) => new Date(s)),
 })
 const updateFlightSchema = baseUpdateFlightSchema.extend({
-  date: z.iso.datetime().transform(s => new Date(s)).optional(),
+  date: z.iso
+    .datetime()
+    .transform((s) => new Date(s))
+    .optional(),
 })
 const flightQuerySchema = baseFlightQuerySchema.extend({
-  helicopterId: z.string().transform(s => parseInt(s)).optional(),
-  startDate: z.string().transform(s => new Date(s)).optional(),
-  endDate: z.string().transform(s => new Date(s)).optional(),
-  page: z.string().optional().transform(s => s ? parseInt(s) : 1),
-  limit: z.string().optional().transform(s => s ? parseInt(s) : 50),
+  helicopterId: z
+    .string()
+    .transform((s) => parseInt(s))
+    .optional(),
+  startDate: z
+    .string()
+    .transform((s) => new Date(s))
+    .optional(),
+  endDate: z
+    .string()
+    .transform((s) => new Date(s))
+    .optional(),
+  page: z
+    .string()
+    .optional()
+    .transform((s) => (s ? parseInt(s) : 1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((s) => (s ? parseInt(s) : 50)),
 })
 
 const flights = new Hono()
   .get('/', zValidator('query', flightQuerySchema), async (c) => {
-    const { startDate, endDate, sortBy, sortOrder, search, flightMode, weather, page, limit } = c.req.valid('query')
+    const { startDate, endDate, sortBy, sortOrder, search, flightMode, weather, page, limit } =
+      c.req.valid('query')
 
     const { flights: flightList, total } = await flightService.list(
       { startDate, endDate, sortBy, sortOrder, search, flightMode, weather },

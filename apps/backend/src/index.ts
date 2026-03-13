@@ -10,10 +10,16 @@ import maintenance from './maintenance/maintenance.routes'
 
 const app = new Hono()
   .use('*', logger())
-  .use('*', cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
-    credentials: true,
-  }))
+  .use(
+    '*',
+    cors({
+      origin: process.env.CORS_ORIGIN?.split(',') || [
+        'http://localhost:5173',
+        'http://localhost:3000',
+      ],
+      credentials: true,
+    }),
+  )
   .get('/', (c) => {
     return c.json({ message: 'Helilog API Server', version: '1.0.0' })
   })
@@ -29,5 +35,5 @@ console.log(`Server is running on http://localhost:${port}`)
 
 serve({
   fetch: app.fetch,
-  port
+  port,
 })

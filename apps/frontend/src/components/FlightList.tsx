@@ -24,7 +24,7 @@ export default function FlightList() {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setDraftFilters(prev => ({ ...prev, [name]: value || undefined }))
+    setDraftFilters((prev) => ({ ...prev, [name]: value || undefined }))
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -95,7 +95,9 @@ export default function FlightList() {
           </div>
         </div>
         <div className="form-actions">
-          <button type="submit" className="btn-primary">Search</button>
+          <button type="submit" className="btn-primary">
+            Search
+          </button>
           <button type="button" onClick={handleClearFilters} className="btn-secondary">
             Clear
           </button>

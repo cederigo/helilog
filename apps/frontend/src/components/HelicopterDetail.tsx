@@ -7,7 +7,11 @@ export default function HelicopterDetail() {
   const navigate = useNavigate()
   const heliId = parseInt(id!)
 
-  const { data: helicopter, isPending, error } = useQuery({
+  const {
+    data: helicopter,
+    isPending,
+    error,
+  } = useQuery({
     queryKey: helicopterKeys.detail(heliId),
     queryFn: () => helicopterApi.getById(heliId),
     enabled: Boolean(id),
@@ -31,7 +35,10 @@ export default function HelicopterDetail() {
       <div className="header">
         <h1>{helicopter.name}</h1>
         <div className="actions">
-          <button onClick={() => navigate(`/helicopters/${helicopter.id}/edit`)} className="btn-primary">
+          <button
+            onClick={() => navigate(`/helicopters/${helicopter.id}/edit`)}
+            className="btn-primary"
+          >
             Edit
           </button>
           <button onClick={() => navigate('/helicopters')} className="btn-secondary">

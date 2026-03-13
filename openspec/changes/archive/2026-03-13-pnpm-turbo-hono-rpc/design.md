@@ -7,6 +7,7 @@ The goal is to modernise the repo structure, eliminate type drift, and use Hono'
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Move to pnpm workspaces with the standard `apps/*` + `packages/*` layout
 - Add Turborepo for parallel, cached `dev`, `build`, and `lint` pipelines
 - Export `AppType` from the backend so the frontend can use `hc<AppType>()` for a fully typed, zero-maintenance API client
@@ -14,6 +15,7 @@ The goal is to modernise the repo structure, eliminate type drift, and use Hono'
 - Preserve all existing runtime behaviour (routes, DB schema, UI features)
 
 **Non-Goals:**
+
 - Changing any business logic, routes, or DB schema
 - Adding new features beyond what is required for the migration
 - Dockerising or changing the deployment target
@@ -40,6 +42,7 @@ The goal is to modernise the repo structure, eliminate type drift, and use Hono'
 ### 3. Turborepo pipeline: `dev`, `build`, `lint`, `db:migrate`
 
 **Decision:** `turbo.json` defines:
+
 - `build`: depends on `^build` (dependencies built first); outputs `dist/**`
 - `dev`: persistent task, no cache, runs in parallel
 - `lint`: independent per-package

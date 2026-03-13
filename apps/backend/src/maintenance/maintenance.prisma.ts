@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client'
 import { MaintenanceRepository } from './maintenance.repository'
-import { MaintenanceRecord, CreateMaintenanceInput, HelicopterMaintenanceData } from './maintenance.types'
+import {
+  MaintenanceRecord,
+  CreateMaintenanceInput,
+  HelicopterMaintenanceData,
+} from './maintenance.types'
 
 export class PrismaMaintenanceRepository implements MaintenanceRepository {
   constructor(private readonly prisma: PrismaClient) {}

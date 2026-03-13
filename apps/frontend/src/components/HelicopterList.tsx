@@ -6,7 +6,11 @@ export default function HelicopterList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const { data: helicopters, isPending, error } = useQuery({
+  const {
+    data: helicopters,
+    isPending,
+    error,
+  } = useQuery({
     queryKey: helicopterKeys.all,
     queryFn: helicopterApi.getAll,
   })

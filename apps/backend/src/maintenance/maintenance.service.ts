@@ -41,11 +41,11 @@ export class MaintenanceService {
           hoursSinceMaintenance: Math.round(hoursSinceMaintenance * 100) / 100,
           nextDueAt: Math.round(nextDue * 100) / 100,
           hoursOverdue: Math.round(hoursOverdue * 100) / 100,
-          status: (
-            hoursOverdue > 0 ? 'overdue' :
-            hoursSinceMaintenance >= (h.maintenanceInterval ?? 0) - 1 ? 'due_soon' :
-            'ok'
-          ) as MaintenanceAlert['status'],
+          status: (hoursOverdue > 0
+            ? 'overdue'
+            : hoursSinceMaintenance >= (h.maintenanceInterval ?? 0) - 1
+              ? 'due_soon'
+              : 'ok') as MaintenanceAlert['status'],
         }
       })
       .filter((a) => a.status !== 'ok')
