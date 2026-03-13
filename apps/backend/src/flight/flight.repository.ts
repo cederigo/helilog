@@ -1,6 +1,5 @@
-import { FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
+import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
 import { PaginationParams } from '../shared/types'
-import { Flight } from '@helilog/shared';
 
 export interface FlightRepository {
   findMany(

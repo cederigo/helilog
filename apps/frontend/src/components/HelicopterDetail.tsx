@@ -1,42 +1,30 @@
-import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { helicopterApi, maintenanceApi } from '../lib/api'
-import type { Helicopter, Flight, MaintenanceRecord } from '@helilog/shared'
+import { useQuery } from '@tanstack/react-query'
+import { helicopterApi, maintenanceApi, helicopterKeys, maintenanceKeys } from '../lib/api'
 
 export default function HelicopterDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [helicopter, setHelicopter] = useState<Helicopter | null>(null)
-  const [recentFlights, setRecentFlights] = useState<Flight[]>([])
-  const [maintenanceHistory, setMaintenanceHistory] = useState<MaintenanceRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const heliId = parseInt(id!)
 
-  useEffect(() => {
-    if (id) loadHelicopter(parseInt(id))
-  }, [id])
+  const { data: helicopter, isPending, error } = useQuery({
+    queryKey: helicopterKeys.detail(heliId),
+    queryFn: () => helicopterApi.getById(heliId),
+    enabled: Boolean(id),
+  })
 
-  const loadHelicopter = async (heliId: number) => {
-    try {
-      setLoading(true)
-      const [heliResponse, maintenanceResponse] = await Promise.all([
-        helicopterApi.getById(heliId),
-        maintenanceApi.getForHelicopter(heliId),
-      ])
-      setHelicopter(heliResponse.data)
-      setRecentFlights(heliResponse.data.flights || [])
-      setMaintenanceHistory(maintenanceResponse.data || [])
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load helicopter')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: maintenanceHistory } = useQuery({
+    queryKey: maintenanceKeys.forHelicopter(heliId),
+    queryFn: () => maintenanceApi.getForHelicopter(heliId),
+    enabled: Boolean(id),
+  })
 
-  if (loading) return <div className="loading">Loading...</div>
-  if (error) return <div className="error">Error: {error}</div>
+  if (isPending) return <div className="loading">Loading...</div>
+  if (error) return <div className="error">Error: {error.message}</div>
   if (!helicopter) return <div className="error">Helicopter not found</div>
+
+  const recentFlights = helicopter.flights ?? []
+  const maintenance = maintenanceHistory ?? []
 
   return (
     <div className="helicopter-detail">
@@ -57,31 +45,31 @@ export default function HelicopterDetail() {
         <dl>
           <dt>Model</dt>
           <dd>{helicopter.model}</dd>
-          
+
           {helicopter.manufacturer && (
             <>
               <dt>Manufacturer</dt>
               <dd>{helicopter.manufacturer}</dd>
             </>
           )}
-          
+
           {helicopter.rotorDiameter && (
             <>
               <dt>Rotor Diameter</dt>
               <dd>{helicopter.rotorDiameter} mm</dd>
             </>
           )}
-          
+
           {helicopter.weight && (
             <>
               <dt>Weight</dt>
               <dd>{helicopter.weight} kg</dd>
             </>
           )}
-          
+
           <dt>Total Flight Hours</dt>
           <dd className="highlight">{helicopter.totalHours.toFixed(2)} hours</dd>
-          
+
           {helicopter.maintenanceInterval && (
             <>
               <dt>Maintenance Interval</dt>
@@ -121,7 +109,7 @@ export default function HelicopterDetail() {
 
       <div className="recent-flights-card">
         <h2>Maintenance History</h2>
-        {maintenanceHistory.length === 0 ? (
+        {maintenance.length === 0 ? (
           <p>No maintenance records yet</p>
         ) : (
           <table>
@@ -133,7 +121,7 @@ export default function HelicopterDetail() {
               </tr>
             </thead>
             <tbody>
-              {maintenanceHistory.map((record) => (
+              {maintenance.map((record) => (
                 <tr key={record.id}>
                   <td>{new Date(record.date).toLocaleDateString()}</td>
                   <td>{record.hoursAtMaintenance.toFixed(1)}h</td>

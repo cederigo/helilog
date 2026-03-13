@@ -10,7 +10,9 @@
       "Bash(cd /home/cederigo/code/helilog/packages/shared && npx tsc 2>&1)",
       "Bash(cd /home/cederigo/code/helilog/packages/shared && /home/cederigo/code/helilog/backend/node_modules/typescript/bin/tsc)",
       "Bash(openspec new:*)",
-      "Bash(openspec list:*)"
+      "Bash(openspec list:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm typecheck:*)"
     ]
   }
 }

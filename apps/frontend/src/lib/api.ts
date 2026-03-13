@@ -1,22 +1,5 @@
 import { hc } from 'hono/client'
 import type { AppType } from '@helilog/backend'
-import type {
-  Helicopter,
-  HelicopterDetail,
-  Flight,
-  FlightWithHelicopter,
-  MaintenanceRecord,
-  DashboardStats,
-  MaintenanceAlert,
-  WeeklyTrend,
-  MonthlyTrend,
-  Pagination,
-  CreateHelicopterInput,
-  UpdateHelicopterInput,
-  CreateFlightInput,
-  UpdateFlightInput,
-  CreateMaintenanceInput,
-} from '@helilog/shared'
 
 // VITE_API_URL is the server root (e.g. http://localhost:3000)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -27,23 +10,29 @@ const client = hc<AppType>(API_BASE_URL)
 export const helicopterApi = {
   getAll: async () => {
     const res = await client.api.helicopters.$get()
-    return { data: (await res.json()) as Helicopter[] }
+    return res.json()
   },
   getById: async (id: number) => {
     const res = await client.api.helicopters[':id'].$get({ param: { id: String(id) } })
-    return { data: (await res.json()) as HelicopterDetail }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
-  create: async (data: CreateHelicopterInput) => {
+  create: async (data: Parameters<typeof client.api.helicopters.$post>[0]['json']) => {
     const res = await client.api.helicopters.$post({ json: data })
-    return { data: (await res.json()) as Helicopter }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
-  update: async (id: number, data: UpdateHelicopterInput) => {
+  update: async (id: number, data: Parameters<typeof client.api.helicopters[':id']['$put']>[0]['json']) => {
     const res = await client.api.helicopters[':id'].$put({ param: { id: String(id) }, json: data })
-    return { data: (await res.json()) as Helicopter }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
   delete: async (id: number) => {
     const res = await client.api.helicopters[':id'].$delete({ param: { id: String(id) } })
-    return { data: (await res.json()) as { message: string } }
+    return res.json()
   },
 }
 
@@ -51,23 +40,29 @@ export const helicopterApi = {
 export const flightApi = {
   getAll: async (params?: Record<string, string>) => {
     const res = await client.api.flights.$get({ query: params ?? {} })
-    return { data: (await res.json()) as { flights: FlightWithHelicopter[]; pagination: Pagination } }
+    return res.json()
   },
   getById: async (id: number) => {
     const res = await client.api.flights[':id'].$get({ param: { id: String(id) } })
-    return { data: (await res.json()) as FlightWithHelicopter }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
-  create: async (data: CreateFlightInput) => {
+  create: async (data: Parameters<typeof client.api.flights.$post>[0]['json']) => {
     const res = await client.api.flights.$post({ json: data })
-    return { data: (await res.json()) as Flight }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
-  update: async (id: number, data: UpdateFlightInput) => {
+  update: async (id: number, data: Parameters<typeof client.api.flights[':id']['$put']>[0]['json']) => {
     const res = await client.api.flights[':id'].$put({ param: { id: String(id) }, json: data })
-    return { data: (await res.json()) as Flight }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
   delete: async (id: number) => {
     const res = await client.api.flights[':id'].$delete({ param: { id: String(id) } })
-    return { data: (await res.json()) as { message: string } }
+    return res.json()
   },
 }
 
@@ -75,34 +70,59 @@ export const flightApi = {
 export const statsApi = {
   getStats: async () => {
     const res = await client.api.stats.$get()
-    return { data: (await res.json()) as DashboardStats }
+    return res.json()
   },
   getRecent: async () => {
     const res = await client.api.stats.recent.$get()
-    return { data: (await res.json()) as FlightWithHelicopter[] }
+    return res.json()
   },
   getWeeklyTrends: async () => {
     const res = await client.api.stats.trends.weekly.$get()
-    return { data: (await res.json()) as { weeks: WeeklyTrend[] } }
+    return res.json()
   },
   getMonthlyTrends: async () => {
     const res = await client.api.stats.trends.monthly.$get()
-    return { data: (await res.json()) as { months: MonthlyTrend[] } }
+    return res.json()
   },
 }
 
 // Maintenance API
 export const maintenanceApi = {
-  create: async (data: CreateMaintenanceInput) => {
+  create: async (data: Parameters<typeof client.api.maintenance.$post>[0]['json']) => {
     const res = await client.api.maintenance.$post({ json: data })
-    return { data: (await res.json()) as MaintenanceRecord }
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
   },
   getForHelicopter: async (id: number) => {
     const res = await client.api.maintenance.helicopters[':id'].maintenance.$get({ param: { id: String(id) } })
-    return { data: (await res.json()) as MaintenanceRecord[] }
+    return res.json()
   },
   getAlerts: async () => {
     const res = await client.api.maintenance.alerts.$get()
-    return { data: (await res.json()) as { alerts: MaintenanceAlert[] } }
+    return res.json()
   },
+}
+
+// Query key factories
+export const helicopterKeys = {
+  all: ['helicopters'] as const,
+  detail: (id: number) => ['helicopters', id] as const,
+}
+
+export const flightKeys = {
+  all: (params?: Record<string, string>) => ['flights', params ?? {}] as const,
+  detail: (id: number) => ['flights', id] as const,
+}
+
+export const statsKeys = {
+  overview: ['stats', 'overview'] as const,
+  recent: ['stats', 'recent'] as const,
+  weeklyTrends: ['stats', 'trends', 'weekly'] as const,
+  monthlyTrends: ['stats', 'trends', 'monthly'] as const,
+}
+
+export const maintenanceKeys = {
+  forHelicopter: (id: number) => ['maintenance', 'helicopter', id] as const,
+  alerts: ['maintenance', 'alerts'] as const,
 }

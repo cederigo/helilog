@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { flightApi, helicopterApi } from '../lib/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { flightApi, helicopterApi, flightKeys, helicopterKeys } from '../lib/api'
 import { createFlightSchema } from '@helilog/shared'
-import type { Helicopter } from '@helilog/shared'
 
 const frontendCreateFlightSchema = createFlightSchema.extend({
   date: z.string().min(1, 'Date is required'),
@@ -17,9 +16,7 @@ export default function FlightForm() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditMode = Boolean(id)
-  const [helicopters, setHelicopters] = useState<Helicopter[]>([])
-  const [submitting, setSubmitting] = useState(false)
-  const [loading, setLoading] = useState(isEditMode)
+  const queryClient = useQueryClient()
 
   const {
     register,
@@ -33,28 +30,17 @@ export default function FlightForm() {
     },
   })
 
-  useEffect(() => {
-    loadHelicopters()
-    if (isEditMode && id) {
-      loadFlight(parseInt(id))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, isEditMode])
+  const { data: helicopters } = useQuery({
+    queryKey: helicopterKeys.all,
+    queryFn: helicopterApi.getAll,
+  })
 
-  const loadHelicopters = async () => {
-    try {
-      const response = await helicopterApi.getAll()
-      setHelicopters(response.data)
-    } catch {
-      alert('Failed to load helicopters')
-    }
-  }
-
-  const loadFlight = async (flightId: number) => {
-    try {
-      setLoading(true)
-      const response = await flightApi.getById(flightId)
-      const flight = response.data
+  const { isPending: loadingFlight } = useQuery({
+    queryKey: flightKeys.detail(parseInt(id!)),
+    queryFn: () => flightApi.getById(parseInt(id!)),
+    enabled: isEditMode,
+    staleTime: Infinity,
+    select: (flight) => {
       reset({
         helicopterId: flight.helicopterId,
         date: flight.date.split('T')[0],
@@ -67,38 +53,28 @@ export default function FlightForm() {
         location: flight.location ?? undefined,
         notes: flight.notes ?? undefined,
       })
-    } catch {
-      alert('Failed to load flight')
-      navigate('/flights')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return flight
+    },
+  })
 
-  const onSubmit = async (data: FlightFormValues) => {
-    try {
-      setSubmitting(true)
+  const saveMutation = useMutation({
+    mutationFn: async (data: FlightFormValues) => {
       const payload = { ...data, date: new Date(data.date).toISOString() }
       if (isEditMode && id) {
-        await flightApi.update(parseInt(id), payload)
-      } else {
-        await flightApi.create(payload)
+        return flightApi.update(parseInt(id), payload)
       }
+      return flightApi.create(payload)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['flights'] })
       navigate('/flights')
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'response' in err &&
-        err.response && typeof err.response === 'object' && 'data' in err.response &&
-        err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data
-        ? String(err.response.data.error) : `Failed to ${isEditMode ? 'update' : 'create'} flight`
-      alert(message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
+    },
+    onError: (err) => alert(err.message),
+  })
 
-  if (loading) return <div className="loading">Loading...</div>
+  if (isEditMode && loadingFlight) return <div className="loading">Loading...</div>
 
-  if (helicopters.length === 0 && !loading) {
+  if (!helicopters?.length) {
     return (
       <div className="empty-state">
         <h1>{isEditMode ? 'Edit Flight' : 'Log Flight'}</h1>
@@ -114,7 +90,7 @@ export default function FlightForm() {
     <div className="flight-form">
       <h1>{isEditMode ? 'Edit Flight' : 'Log Flight'}</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit((data) => saveMutation.mutate(data))}>
         <div className="form-group">
           <label htmlFor="helicopterId">Helicopter *</label>
           <select
@@ -242,8 +218,8 @@ export default function FlightForm() {
           <button type="button" onClick={() => navigate('/flights')} className="btn-secondary">
             Cancel
           </button>
-          <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? (isEditMode ? 'Updating...' : 'Logging...') : (isEditMode ? 'Update Flight' : 'Log Flight')}
+          <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
+            {saveMutation.isPending ? (isEditMode ? 'Updating...' : 'Logging...') : (isEditMode ? 'Update Flight' : 'Log Flight')}
           </button>
         </div>
       </form>

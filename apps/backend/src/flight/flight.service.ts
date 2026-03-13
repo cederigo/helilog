@@ -1,9 +1,8 @@
 import { FlightRepository } from './flight.repository'
-import { FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
+import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
 import { FlightNotFoundError } from './flight.errors'
 import { HelicopterRepository } from '../helicopter/helicopter.repository'
 import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
-import { Flight } from '@helilog/shared'
 
 export class FlightService {
   constructor(

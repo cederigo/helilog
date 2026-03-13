@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { helicopterApi } from '../lib/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { helicopterApi, helicopterKeys } from '../lib/api'
 import { createHelicopterSchema, type CreateHelicopterInput, type UpdateHelicopterInput } from '@helilog/shared'
 
 export default function HelicopterForm() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditMode = Boolean(id)
-  const [submitting, setSubmitting] = useState(false)
-  const [loading, setLoading] = useState(isEditMode)
+  const queryClient = useQueryClient()
 
   const {
     register,
@@ -22,18 +21,12 @@ export default function HelicopterForm() {
     resolver: zodResolver(createHelicopterSchema),
   })
 
-  useEffect(() => {
-    if (isEditMode && id) {
-      loadHelicopter(parseInt(id))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, isEditMode])
-
-  const loadHelicopter = async (heliId: number) => {
-    try {
-      setLoading(true)
-      const response = await helicopterApi.getById(heliId)
-      const heli = response.data
+  const { isPending: loadingExisting } = useQuery({
+    queryKey: helicopterKeys.detail(parseInt(id!)),
+    queryFn: () => helicopterApi.getById(parseInt(id!)),
+    enabled: isEditMode,
+    staleTime: Infinity,
+    select: (heli) => {
       const defaults: UpdateHelicopterInput = {
         name: heli.name,
         model: heli.model,
@@ -43,17 +36,12 @@ export default function HelicopterForm() {
         ...(heli.maintenanceInterval != null && { maintenanceInterval: heli.maintenanceInterval }),
       }
       reset(defaults)
-    } catch {
-      alert('Failed to load helicopter')
-      navigate('/helicopters')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return heli
+    },
+  })
 
-  const onSubmit = async (data: CreateHelicopterInput) => {
-    try {
-      setSubmitting(true)
+  const saveMutation = useMutation({
+    mutationFn: async (data: CreateHelicopterInput) => {
       const payload: CreateHelicopterInput = {
         name: data.name.trim(),
         model: data.model.trim(),
@@ -63,33 +51,30 @@ export default function HelicopterForm() {
         ...(data.maintenanceInterval != null && !isNaN(data.maintenanceInterval) && { maintenanceInterval: data.maintenanceInterval }),
       }
       if (isEditMode && id) {
-        await helicopterApi.update(parseInt(id), payload)
-      } else {
-        await helicopterApi.create(payload)
+        return helicopterApi.update(parseInt(id), payload)
       }
+      return helicopterApi.create(payload)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: helicopterKeys.all })
       navigate('/helicopters')
-    } catch (err) {
-      const errorMsg = err && typeof err === 'object' && 'response' in err &&
-        err.response && typeof err.response === 'object' && 'data' in err.response &&
-        err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data
-        ? String(err.response.data.error) : `Failed to ${isEditMode ? 'update' : 'create'} helicopter`
-      if (errorMsg.includes('already exists')) {
+    },
+    onError: (err) => {
+      if (err.message.includes('already exists')) {
         setError('name', { message: 'A helicopter with this name already exists' })
       } else {
-        alert(errorMsg)
+        alert(err.message)
       }
-    } finally {
-      setSubmitting(false)
-    }
-  }
+    },
+  })
 
-  if (loading) return <div className="loading">Loading...</div>
+  if (isEditMode && loadingExisting) return <div className="loading">Loading...</div>
 
   return (
     <div className="helicopter-form">
       <h1>{isEditMode ? 'Edit Helicopter' : 'Add Helicopter'}</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit((data) => saveMutation.mutate(data))}>
         <div className="form-group">
           <label htmlFor="name">Name *</label>
           <input
@@ -162,8 +147,8 @@ export default function HelicopterForm() {
           <button type="button" onClick={() => navigate('/helicopters')} className="btn-secondary">
             Cancel
           </button>
-          <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Helicopter' : 'Create Helicopter')}
+          <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
+            {saveMutation.isPending ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Helicopter' : 'Create Helicopter')}
           </button>
         </div>
       </form>

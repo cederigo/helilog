@@ -1,48 +1,29 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { helicopterApi } from '../lib/api'
-import type { Helicopter } from '@helilog/shared'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { helicopterApi, helicopterKeys } from '../lib/api'
 
 export default function HelicopterList() {
-  const [helicopters, setHelicopters] = useState<Helicopter[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    loadHelicopters()
-  }, [])
+  const { data: helicopters, isPending, error } = useQuery({
+    queryKey: helicopterKeys.all,
+    queryFn: helicopterApi.getAll,
+  })
 
-  const loadHelicopters = async () => {
-    try {
-      setLoading(true)
-      const response = await helicopterApi.getAll()
-      setHelicopters(response.data)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load helicopters')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => helicopterApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: helicopterKeys.all }),
+    onError: (err) => alert(err.message),
+  })
 
-  const handleDelete = async (id: number, name: string) => {
+  const handleDelete = (id: number, name: string) => {
     if (!confirm(`Delete helicopter "${name}"?`)) return
-
-    try {
-      await helicopterApi.delete(id)
-      loadHelicopters()
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'response' in err && 
-        err.response && typeof err.response === 'object' && 'data' in err.response &&
-        err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data
-        ? String(err.response.data.error) : 'Failed to delete helicopter'
-      alert(message)
-    }
+    deleteMutation.mutate(id)
   }
 
-  if (loading) return <div className="loading">Loading helicopters...</div>
-  if (error) return <div className="error">Error: {error}</div>
+  if (isPending) return <div className="loading">Loading helicopters...</div>
+  if (error) return <div className="error">Error: {error.message}</div>
 
   return (
     <div className="helicopter-list">

@@ -1,87 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { flightApi } from '../lib/api'
-import type { Flight } from '@helilog/shared'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { flightApi, flightKeys } from '../lib/api'
+
+type Filters = {
+  helicopterId: string
+  startDate: string
+  endDate: string
+  flightMode: string
+  minDuration: string
+  maxDuration: string
+}
+
+const emptyFilters: Filters = {
+  helicopterId: '',
+  startDate: '',
+  endDate: '',
+  flightMode: '',
+  minDuration: '',
+  maxDuration: '',
+}
+
+function toQueryParams(filters: Filters): Record<string, string> {
+  const params: Record<string, string> = {}
+  if (filters.helicopterId) params.helicopterId = filters.helicopterId
+  if (filters.startDate) params.startDate = filters.startDate
+  if (filters.endDate) params.endDate = filters.endDate
+  if (filters.flightMode) params.flightMode = filters.flightMode
+  if (filters.minDuration) params.minDuration = filters.minDuration
+  if (filters.maxDuration) params.maxDuration = filters.maxDuration
+  return params
+}
 
 export default function FlightList() {
-  const [flights, setFlights] = useState<Flight[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState({
-    helicopterId: '',
-    startDate: '',
-    endDate: '',
-    flightMode: '',
-    minDuration: '',
-    maxDuration: '',
-  })
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [appliedFilters, setAppliedFilters] = useState<Filters>(emptyFilters)
+  const [draftFilters, setDraftFilters] = useState<Filters>(emptyFilters)
 
-  useEffect(() => {
-    loadFlights()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const params = toQueryParams(appliedFilters)
 
-  const loadFlights = async () => {
-    try {
-      setLoading(true)
-      const params: Record<string, string> = {}
-      if (filters.helicopterId) params.helicopterId = filters.helicopterId
-      if (filters.startDate) params.startDate = filters.startDate
-      if (filters.endDate) params.endDate = filters.endDate
-      if (filters.flightMode) params.flightMode = filters.flightMode
-      if (filters.minDuration) params.minDuration = filters.minDuration
-      if (filters.maxDuration) params.maxDuration = filters.maxDuration
+  const { data, isPending, error } = useQuery({
+    queryKey: flightKeys.all(params),
+    queryFn: () => flightApi.getAll(params),
+  })
 
-      const response = await flightApi.getAll(params)
-      setFlights(response.data.flights || response.data)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load flights')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => flightApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['flights'] }),
+    onError: (err) => alert(err.message),
+  })
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
+    setDraftFilters(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    loadFlights()
+    setAppliedFilters(draftFilters)
   }
 
   const handleClearFilters = () => {
-    setFilters({
-      helicopterId: '',
-      startDate: '',
-      endDate: '',
-      flightMode: '',
-      minDuration: '',
-      maxDuration: '',
-    })
-    setTimeout(() => loadFlights(), 0)
+    setDraftFilters(emptyFilters)
+    setAppliedFilters(emptyFilters)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm('Delete this flight?')) return
-
-    try {
-      await flightApi.delete(id)
-      loadFlights()
-    } catch (err) {
-      const message = err && typeof err === 'object' && 'response' in err &&
-        err.response && typeof err.response === 'object' && 'data' in err.response &&
-        err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data
-        ? String(err.response.data.error) : 'Failed to delete flight'
-      alert(message)
-    }
+    deleteMutation.mutate(id)
   }
 
-  if (loading) return <div className="loading">Loading flights...</div>
-  if (error) return <div className="error">Error: {error}</div>
+  if (isPending) return <div className="loading">Loading flights...</div>
+  if (error) return <div className="error">Error: {error.message}</div>
+
+  const flights = data.flights
 
   return (
     <div className="flight-list">
@@ -100,7 +93,7 @@ export default function FlightList() {
               type="date"
               id="startDate"
               name="startDate"
-              value={filters.startDate}
+              value={draftFilters.startDate}
               onChange={handleFilterChange}
             />
           </div>
@@ -110,7 +103,7 @@ export default function FlightList() {
               type="date"
               id="endDate"
               name="endDate"
-              value={filters.endDate}
+              value={draftFilters.endDate}
               onChange={handleFilterChange}
             />
           </div>
@@ -119,7 +112,7 @@ export default function FlightList() {
             <select
               id="flightMode"
               name="flightMode"
-              value={filters.flightMode}
+              value={draftFilters.flightMode}
               onChange={handleFilterChange}
             >
               <option value="">All</option>

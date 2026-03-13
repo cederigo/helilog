@@ -1,8 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { FlightRepository } from './flight.repository'
-import { FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
+import { Flight, FlightWithHelicopter, CreateFlightInput, UpdateFlightInput, FlightFilters } from './flight.types'
 import { serializeDates } from '../shared/utils'
-import { Flight } from '@helilog/shared';
 
 export class PrismaFlightRepository implements FlightRepository {
   constructor(private readonly prisma: PrismaClient) {}

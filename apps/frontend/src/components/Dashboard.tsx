@@ -1,47 +1,31 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { statsApi, maintenanceApi } from '../lib/api'
-import type { DashboardStats, Flight, MaintenanceAlert, WeeklyTrend, MonthlyTrend } from '@helilog/shared'
+import { useQueries } from '@tanstack/react-query'
+import { statsApi, maintenanceApi, statsKeys, maintenanceKeys } from '../lib/api'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [recentFlights, setRecentFlights] = useState<Flight[]>([])
-  const [maintenanceAlerts, setMaintenanceAlerts] = useState<MaintenanceAlert[]>([])
-  const [weeklyTrends, setWeeklyTrends] = useState<WeeklyTrend[]>([])
-  const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadDashboard()
-  }, [])
+  const [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery] = useQueries({
+    queries: [
+      { queryKey: statsKeys.overview, queryFn: statsApi.getStats },
+      { queryKey: statsKeys.recent, queryFn: statsApi.getRecent },
+      { queryKey: maintenanceKeys.alerts, queryFn: maintenanceApi.getAlerts },
+      { queryKey: statsKeys.weeklyTrends, queryFn: statsApi.getWeeklyTrends },
+      { queryKey: statsKeys.monthlyTrends, queryFn: statsApi.getMonthlyTrends },
+    ],
+  })
 
-  const loadDashboard = async () => {
-    try {
-      setLoading(true)
-      const [statsRes, recentRes, alertsRes, weeklyRes, monthlyRes] = await Promise.all([
-        statsApi.getStats(),
-        statsApi.getRecent(),
-        maintenanceApi.getAlerts(),
-        statsApi.getWeeklyTrends(),
-        statsApi.getMonthlyTrends(),
-      ])
-      setStats(statsRes.data)
-      setRecentFlights(recentRes.data)
-      setMaintenanceAlerts(alertsRes.data.alerts || [])
-      setWeeklyTrends(weeklyRes.data.weeks || [])
-      setMonthlyTrends(monthlyRes.data.months || [])
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const isPending = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].some(q => q.isPending)
+  const error = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].find(q => q.error)?.error
 
-  if (loading) return <div className="loading">Loading dashboard...</div>
-  if (error) return <div className="error">Error: {error}</div>
+  if (isPending) return <div className="loading">Loading dashboard...</div>
+  if (error) return <div className="error">Error: {error.message}</div>
+
+  const stats = statsQuery.data
+  const recentFlights = recentQuery.data ?? []
+  const maintenanceAlerts = alertsQuery.data?.alerts ?? []
+  const weeklyTrends = weeklyQuery.data?.weeks ?? []
+  const monthlyTrends = monthlyQuery.data?.months ?? []
 
   return (
     <div className="dashboard">
