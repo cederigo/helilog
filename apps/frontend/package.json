@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@helilog/frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@helilog/shared": "*",
+    "@helilog/shared": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
-    "axios": "^1.13.6",
+    "zod": "^4.3.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@helilog/backend": "workspace:*",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -28,6 +30,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "hono": "^4.12.7",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.0"

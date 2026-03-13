@@ -1,24 +1,26 @@
 {
-  "name": "backend",
+  "name": "@helilog/backend",
   "version": "1.0.0",
   "description": "Helilog backend API server",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "node esbuild.config.js",
+    "build": "tsc && node esbuild.config.js",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:studio": "prisma studio"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@helilog/shared": "*",
+    "@helilog/shared": "workspace:*",
     "@hono/node-server": "^1.19.11",
     "@hono/zod-validator": "^0.7.6",
     "@libsql/client": "^0.17.0",

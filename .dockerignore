@@ -1,10 +1,11 @@
 node_modules
-backend/node_modules
-frontend/node_modules
-packages/shared/node_modules
+**/node_modules
 .git
 .gitignore
 .vscode
 .idea
-backend/dev.db
-backend/dev.db-journal
+.turbo
+**/dist
+**/.env.local
+**/dev.db
+**/dev.db-journal

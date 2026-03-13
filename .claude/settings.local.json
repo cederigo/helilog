@@ -8,7 +8,9 @@
       "Bash(cd /home/cederigo/code/helilog && npm install 2>&1 | tail -5)",
       "Bash(npm install:*)",
       "Bash(cd /home/cederigo/code/helilog/packages/shared && npx tsc 2>&1)",
-      "Bash(cd /home/cederigo/code/helilog/packages/shared && /home/cederigo/code/helilog/backend/node_modules/typescript/bin/tsc)"
+      "Bash(cd /home/cederigo/code/helilog/packages/shared && /home/cederigo/code/helilog/backend/node_modules/typescript/bin/tsc)",
+      "Bash(openspec new:*)",
+      "Bash(openspec list:*)"
     ]
   }
 }

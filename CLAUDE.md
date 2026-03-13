@@ -4,58 +4,94 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HeliLog is a full-stack web app for logging RC helicopter flights. It has a **backend** (Hono + Prisma + SQLite) and a **frontend** (React + Vite + TypeScript) as separate npm workspaces.
+HeliLog is a full-stack web app for logging RC helicopter flights. It uses **pnpm workspaces** with **Turborepo** for orchestrated builds. The repo is structured as:
+
+```
+apps/backend/    # Hono + Prisma + SQLite server
+apps/frontend/   # React + Vite + TypeScript client
+packages/shared/ # Shared TypeScript types and Zod schemas
+```
+
+## Package Manager & Build Tool
+
+- **Package manager**: pnpm (use `pnpm` not `npm`)
+- **Build orchestration**: Turborepo (`turbo`)
+- Run all commands from the **repo root** unless working on a specific package
 
 ## Commands
 
-### Backend (`cd backend`)
+### Root (run from repo root)
 ```bash
-npm run dev          # Start dev server with hot reload (tsx watch)
-npm run build        # TypeScript compile to dist/
-npm start            # Run production build
-npm run db:migrate   # Run Prisma migrations (creates/updates SQLite DB)
-npm run db:generate  # Regenerate Prisma client after schema changes
-npm run db:studio    # Open Prisma Studio GUI
+pnpm dev         # Start all dev servers concurrently (backend + frontend)
+pnpm build       # Build all packages in dependency order
+pnpm lint        # Lint all packages
+pnpm typecheck   # TypeScript check all packages
 ```
 
-### Frontend (`cd frontend`)
+### Backend (`cd apps/backend`)
 ```bash
-npm run dev          # Start Vite dev server on :5173
-npm run build        # TypeScript check + Vite build
-npm run lint         # ESLint
-npm run preview      # Preview production build
+pnpm dev         # Start dev server with hot reload (tsx watch)
+pnpm build       # Emit .d.ts declarations + esbuild bundle to dist/
+pnpm start       # Run production build
+pnpm db:migrate  # Run Prisma migrations (creates/updates SQLite DB)
+pnpm db:generate # Regenerate Prisma client after schema changes
+pnpm db:studio   # Open Prisma Studio GUI
+```
+
+### Frontend (`cd apps/frontend`)
+```bash
+pnpm dev         # Start Vite dev server on :5173
+pnpm build       # TypeScript check + Vite build
+pnpm lint        # ESLint
+pnpm preview     # Preview production build
 ```
 
 ### Database migration workflow
 ```bash
-cd backend
-npm run db:migrate -- --name your_migration_name
+cd apps/backend
+pnpm db:migrate -- --name your_migration_name
 ```
 
 ## Architecture
 
-### Backend
-- **Entry point**: `backend/src/index.ts` — sets up Hono app with CORS, logger middleware, mounts routes under `/api/`
-- **Database**: `backend/src/db.ts` — singleton Prisma client using `@prisma/adapter-libsql`; `DATABASE_URL` defaults to `file:./dev.db`
-- **Routes**: `backend/src/routes/` — one file per resource (`helicopters.ts`, `flights.ts`, `stats.ts`, `maintenance.ts`). Each uses `@hono/zod-validator` for request validation.
-- **Schema**: `backend/prisma/schema.prisma` — three models: `Helicopter`, `Flight`, `MaintenanceRecord`. Deleting a helicopter cascades to its flights and maintenance records.
+### Backend (`apps/backend`)
+- **Entry point**: `apps/backend/src/index.ts` — sets up Hono app with CORS, logger middleware, mounts routes under `/api/`. Exports `AppType` for Hono RPC client.
+- **AppType**: `export type AppType = typeof app` — the fully-typed Hono router, used by the frontend's `hc<AppType>()` client
+- **Database**: `apps/backend/src/db.ts` — singleton Prisma client using `@prisma/adapter-libsql`; `DATABASE_URL` defaults to `file:./dev.db`
+- **Routes**: Domain modules under `apps/backend/src/{helicopter,flight,stats,maintenance}/` — each `*.routes.ts` file exports a typed Hono sub-router using method chaining (required for RPC type inference)
+- **Schema**: `apps/backend/prisma/schema.prisma` — three models: `Helicopter`, `Flight`, `MaintenanceRecord`
 
-### Frontend
-- **Entry**: `frontend/src/main.tsx` → `App.tsx`
+### Frontend (`apps/frontend`)
+- **Entry**: `apps/frontend/src/main.tsx` → `App.tsx`
 - **Routing**: React Router v7, routes defined in `App.tsx`
-- **API client**: `frontend/src/lib/api.ts` — axios instance; base URL from `VITE_API_URL` env var (default `http://localhost:3000/api`). Exports `helicopterApi`, `flightApi`, `statsApi`, `maintenanceApi`.
-- **Types**: `frontend/src/types/index.ts` — shared TypeScript types mirroring the Prisma models
-- **Components**: `frontend/src/components/` — page-level components (Dashboard, HelicopterList, HelicopterDetail, HelicopterForm, FlightList, FlightForm)
+- **API client**: `apps/frontend/src/lib/api.ts` — Hono RPC client using `hc<AppType>()` from `hono/client`. Base URL from `VITE_API_URL` env var (default `http://localhost:3000`). Exports `helicopterApi`, `flightApi`, `statsApi`, `maintenanceApi`.
+- **Components**: `apps/frontend/src/components/` — page-level components
+
+### Shared (`packages/shared`)
+- **Types & Zod schemas**: `packages/shared/src/index.ts` — shared TypeScript interfaces and Zod validation schemas used by both backend and frontend
+
+## Hono RPC
+
+The backend exports `AppType` from `apps/backend/src/index.ts`. The frontend imports it as a type-only import and uses `hc<AppType>(baseUrl)` to get a fully typed HTTP client. **All route handlers must use `c.json()` for responses and routes must be defined via method chaining** (not imperative calls) for TypeScript to infer the full type.
 
 ## Environment Variables
 
-**Backend** (`backend/.env`):
+**Backend** (`apps/backend/.env`):
 - `DATABASE_URL` — SQLite file path (default: `file:./dev.db`)
 - `CORS_ORIGIN` — comma-separated origins (default: `http://localhost:5173,http://localhost:3000`)
-- `PORT` — server port (hardcoded to 3000 in `index.ts`)
 
-**Frontend** (`frontend/.env.local`):
-- `VITE_API_URL` — backend API base URL (default: `http://localhost:3000/api`)
+**Frontend** (`apps/frontend/.env.local`):
+- `VITE_API_URL` — backend server root URL, **without `/api` suffix** (default: `http://localhost:3000`)
+
+## Docker
+
+Build images from the **repo root** using `turbo prune` for minimal contexts:
+
+```bash
+docker build -f apps/backend/Dockerfile .
+docker build -f apps/frontend/Dockerfile .
+docker-compose up  # Uses both
+```
 
 ## OpenSpec
 

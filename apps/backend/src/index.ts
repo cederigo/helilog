@@ -9,24 +9,20 @@ import stats from './stats/stats.routes'
 import maintenance from './maintenance/maintenance.routes'
 
 const app = new Hono()
+  .use('*', logger())
+  .use('*', cors({
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+  }))
+  .get('/', (c) => {
+    return c.json({ message: 'Helilog API Server', version: '1.0.0' })
+  })
+  .route('/api/helicopters', helicopters)
+  .route('/api/flights', flights)
+  .route('/api/stats', stats)
+  .route('/api/maintenance', maintenance)
 
-// Middleware
-app.use('*', logger())
-app.use('*', cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-}))
-
-// Health check
-app.get('/', (c) => {
-  return c.json({ message: 'Helilog API Server', version: '1.0.0' })
-})
-
-// API routes
-app.route('/api/helicopters', helicopters)
-app.route('/api/flights', flights)
-app.route('/api/stats', stats)
-app.route('/api/maintenance', maintenance)
+export type AppType = typeof app
 
 const port = 3000
 console.log(`Server is running on http://localhost:${port}`)

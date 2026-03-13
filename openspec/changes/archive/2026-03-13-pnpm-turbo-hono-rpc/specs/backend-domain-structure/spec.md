@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Domain-driven module layout
 The backend `src/` directory SHALL be organized into domain modules (`helicopter/`, `flight/`, `maintenance/`, `stats/`, `shared/`). Each domain module SHALL contain all code related to that domain: types, errors, repository interface, service, Prisma implementation, Zod schema, and Hono routes. A `container.ts` at the `src/` root SHALL wire up singleton service instances. The backend package SHALL reside at `apps/backend/` (not `backend/`) within the monorepo.
