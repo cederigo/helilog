@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { flightApi } from '../lib/api'
-import type { Flight } from '../types'
+import type { Flight } from '@helilog/shared'
 
 export default function FlightList() {
   const [flights, setFlights] = useState<Flight[]>([])

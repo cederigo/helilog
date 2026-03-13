@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { statsApi, maintenanceApi } from '../lib/api'
-import type { DashboardStats, Flight, MaintenanceAlert, WeeklyTrend, MonthlyTrend } from '../types'
+import type { DashboardStats, Flight, MaintenanceAlert, WeeklyTrend, MonthlyTrend } from '@helilog/shared'
 
 export default function Dashboard() {
   const navigate = useNavigate()

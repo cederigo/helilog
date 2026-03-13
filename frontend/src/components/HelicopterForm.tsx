@@ -1,31 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { helicopterApi } from '../lib/api'
-
-interface FormData {
-  name: string
-  model: string
-  manufacturer: string
-  rotorDiameter: string
-  weight: string
-  maintenanceInterval: string
-}
+import { createHelicopterSchema, type CreateHelicopterInput, type UpdateHelicopterInput } from '@helilog/shared'
 
 export default function HelicopterForm() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditMode = Boolean(id)
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    model: '',
-    manufacturer: '',
-    rotorDiameter: '',
-    weight: '',
-    maintenanceInterval: '',
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(isEditMode)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<CreateHelicopterInput>({
+    resolver: zodResolver(createHelicopterSchema),
+  })
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -39,14 +34,15 @@ export default function HelicopterForm() {
       setLoading(true)
       const response = await helicopterApi.getById(heliId)
       const heli = response.data
-      setFormData({
+      const defaults: UpdateHelicopterInput = {
         name: heli.name,
         model: heli.model,
-        manufacturer: heli.manufacturer || '',
-        rotorDiameter: heli.rotorDiameter?.toString() || '',
-        weight: heli.weight?.toString() || '',
-        maintenanceInterval: heli.maintenanceInterval?.toString() || '',
-      })
+        ...(heli.manufacturer != null && { manufacturer: heli.manufacturer }),
+        ...(heli.rotorDiameter != null && { rotorDiameter: heli.rotorDiameter }),
+        ...(heli.weight != null && { weight: heli.weight }),
+        ...(heli.maintenanceInterval != null && { maintenanceInterval: heli.maintenanceInterval }),
+      }
+      reset(defaults)
     } catch {
       alert('Failed to load helicopter')
       navigate('/helicopters')
@@ -55,53 +51,17 @@ export default function HelicopterForm() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
-  }
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {}
-    
-    if (!formData.name.trim()) newErrors.name = 'Name is required'
-    if (!formData.model.trim()) newErrors.model = 'Model is required'
-    
-    if (formData.rotorDiameter && parseFloat(formData.rotorDiameter) <= 0) {
-      newErrors.rotorDiameter = 'Must be positive'
-    }
-    if (formData.weight && parseFloat(formData.weight) <= 0) {
-      newErrors.weight = 'Must be positive'
-    }
-    if (formData.maintenanceInterval && parseFloat(formData.maintenanceInterval) <= 0) {
-      newErrors.maintenanceInterval = 'Must be positive'
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validate()) return
-
+  const onSubmit = async (data: CreateHelicopterInput) => {
     try {
       setSubmitting(true)
-      
-      const payload: Record<string, unknown> = {
-        name: formData.name.trim(),
-        model: formData.model.trim(),
+      const payload: CreateHelicopterInput = {
+        name: data.name.trim(),
+        model: data.model.trim(),
+        ...(data.manufacturer && { manufacturer: data.manufacturer.trim() }),
+        ...(data.rotorDiameter != null && !isNaN(data.rotorDiameter) && { rotorDiameter: data.rotorDiameter }),
+        ...(data.weight != null && !isNaN(data.weight) && { weight: data.weight }),
+        ...(data.maintenanceInterval != null && !isNaN(data.maintenanceInterval) && { maintenanceInterval: data.maintenanceInterval }),
       }
-      
-      if (formData.manufacturer) payload.manufacturer = formData.manufacturer.trim()
-      if (formData.rotorDiameter) payload.rotorDiameter = parseFloat(formData.rotorDiameter)
-      if (formData.weight) payload.weight = parseFloat(formData.weight)
-      if (formData.maintenanceInterval) payload.maintenanceInterval = parseFloat(formData.maintenanceInterval)
-      
       if (isEditMode && id) {
         await helicopterApi.update(parseInt(id), payload)
       } else {
@@ -114,7 +74,7 @@ export default function HelicopterForm() {
         err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data
         ? String(err.response.data.error) : `Failed to ${isEditMode ? 'update' : 'create'} helicopter`
       if (errorMsg.includes('already exists')) {
-        setErrors({ name: 'A helicopter with this name already exists' })
+        setError('name', { message: 'A helicopter with this name already exists' })
       } else {
         alert(errorMsg)
       }
@@ -128,19 +88,17 @@ export default function HelicopterForm() {
   return (
     <div className="helicopter-form">
       <h1>{isEditMode ? 'Edit Helicopter' : 'Add Helicopter'}</h1>
-      
-      <form onSubmit={handleSubmit}>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="form-group">
           <label htmlFor="name">Name *</label>
           <input
             type="text"
             id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
+            {...register('name')}
             className={errors.name ? 'error' : ''}
           />
-          {errors.name && <span className="error-message">{errors.name}</span>}
+          {errors.name && <span className="error-message">{errors.name.message}</span>}
         </div>
 
         <div className="form-group">
@@ -148,12 +106,10 @@ export default function HelicopterForm() {
           <input
             type="text"
             id="model"
-            name="model"
-            value={formData.model}
-            onChange={handleChange}
+            {...register('model')}
             className={errors.model ? 'error' : ''}
           />
-          {errors.model && <span className="error-message">{errors.model}</span>}
+          {errors.model && <span className="error-message">{errors.model.message}</span>}
         </div>
 
         <div className="form-group">
@@ -161,9 +117,7 @@ export default function HelicopterForm() {
           <input
             type="text"
             id="manufacturer"
-            name="manufacturer"
-            value={formData.manufacturer}
-            onChange={handleChange}
+            {...register('manufacturer')}
           />
         </div>
 
@@ -173,12 +127,10 @@ export default function HelicopterForm() {
             <input
               type="number"
               id="rotorDiameter"
-              name="rotorDiameter"
-              value={formData.rotorDiameter}
-              onChange={handleChange}
+              {...register('rotorDiameter', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
               className={errors.rotorDiameter ? 'error' : ''}
             />
-            {errors.rotorDiameter && <span className="error-message">{errors.rotorDiameter}</span>}
+            {errors.rotorDiameter && <span className="error-message">{errors.rotorDiameter.message}</span>}
           </div>
 
           <div className="form-group">
@@ -187,12 +139,10 @@ export default function HelicopterForm() {
               type="number"
               step="0.01"
               id="weight"
-              name="weight"
-              value={formData.weight}
-              onChange={handleChange}
+              {...register('weight', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
               className={errors.weight ? 'error' : ''}
             />
-            {errors.weight && <span className="error-message">{errors.weight}</span>}
+            {errors.weight && <span className="error-message">{errors.weight.message}</span>}
           </div>
         </div>
 
@@ -202,12 +152,10 @@ export default function HelicopterForm() {
             type="number"
             step="0.1"
             id="maintenanceInterval"
-            name="maintenanceInterval"
-            value={formData.maintenanceInterval}
-            onChange={handleChange}
+            {...register('maintenanceInterval', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
             className={errors.maintenanceInterval ? 'error' : ''}
           />
-          {errors.maintenanceInterval && <span className="error-message">{errors.maintenanceInterval}</span>}
+          {errors.maintenanceInterval && <span className="error-message">{errors.maintenanceInterval.message}</span>}
         </div>
 
         <div className="form-actions">

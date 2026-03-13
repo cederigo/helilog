@@ -3,10 +3,10 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import helicopters from './routes/helicopters'
-import flights from './routes/flights'
-import stats from './routes/stats'
-import maintenance from './routes/maintenance'
+import helicopters from './helicopter/helicopter.routes'
+import flights from './flight/flight.routes'
+import stats from './stats/stats.routes'
+import maintenance from './maintenance/maintenance.routes'
 
 const app = new Hono()
 

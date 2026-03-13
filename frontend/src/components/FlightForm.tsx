@@ -1,41 +1,37 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { flightApi, helicopterApi } from '../lib/api'
-import type { Helicopter } from '../types'
+import { createFlightSchema } from '@helilog/shared'
+import type { Helicopter } from '@helilog/shared'
 
-interface FormData {
-  helicopterId: string
-  date: string
-  duration: string
-  batteryCycles: string
-  flightMode: string
-  weather: string
-  temperature: string
-  windSpeed: string
-  location: string
-  notes: string
-}
+const frontendCreateFlightSchema = createFlightSchema.extend({
+  date: z.string().min(1, 'Date is required'),
+})
+
+type FlightFormValues = z.infer<typeof frontendCreateFlightSchema>
 
 export default function FlightForm() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isEditMode = Boolean(id)
   const [helicopters, setHelicopters] = useState<Helicopter[]>([])
-  const [formData, setFormData] = useState<FormData>({
-    helicopterId: '',
-    date: new Date().toISOString().split('T')[0],
-    duration: '',
-    batteryCycles: '',
-    flightMode: '',
-    weather: '',
-    temperature: '',
-    windSpeed: '',
-    location: '',
-    notes: '',
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(isEditMode)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FlightFormValues>({
+    resolver: zodResolver(frontendCreateFlightSchema),
+    defaultValues: {
+      date: new Date().toISOString().split('T')[0],
+    },
+  })
 
   useEffect(() => {
     loadHelicopters()
@@ -59,17 +55,17 @@ export default function FlightForm() {
       setLoading(true)
       const response = await flightApi.getById(flightId)
       const flight = response.data
-      setFormData({
-        helicopterId: flight.helicopterId.toString(),
+      reset({
+        helicopterId: flight.helicopterId,
         date: flight.date.split('T')[0],
-        duration: flight.duration.toString(),
-        batteryCycles: flight.batteryCycles?.toString() || '',
-        flightMode: flight.flightMode || '',
-        weather: flight.weather || '',
-        temperature: flight.temperature?.toString() || '',
-        windSpeed: flight.windSpeed?.toString() || '',
-        location: flight.location || '',
-        notes: flight.notes || '',
+        duration: flight.duration,
+        batteryCycles: flight.batteryCycles ?? undefined,
+        flightMode: (flight.flightMode as FlightFormValues['flightMode']) ?? undefined,
+        weather: flight.weather ?? undefined,
+        temperature: flight.temperature ?? undefined,
+        windSpeed: flight.windSpeed ?? undefined,
+        location: flight.location ?? undefined,
+        notes: flight.notes ?? undefined,
       })
     } catch {
       alert('Failed to load flight')
@@ -79,58 +75,10 @@ export default function FlightForm() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
-  }
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {}
-    
-    if (!formData.helicopterId) newErrors.helicopterId = 'Helicopter is required'
-    if (!formData.date) newErrors.date = 'Date is required'
-    if (!formData.duration) {
-      newErrors.duration = 'Duration is required'
-    } else if (parseFloat(formData.duration) <= 0) {
-      newErrors.duration = 'Duration must be positive'
-    }
-    
-    if (formData.batteryCycles && parseInt(formData.batteryCycles) < 0) {
-      newErrors.batteryCycles = 'Cannot be negative'
-    }
-    if (formData.windSpeed && parseFloat(formData.windSpeed) < 0) {
-      newErrors.windSpeed = 'Cannot be negative'
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validate()) return
-
+  const onSubmit = async (data: FlightFormValues) => {
     try {
       setSubmitting(true)
-      
-      const payload: Record<string, unknown> = {
-        helicopterId: parseInt(formData.helicopterId),
-        date: new Date(formData.date).toISOString(),
-        duration: parseFloat(formData.duration),
-      }
-      
-      if (formData.batteryCycles) payload.batteryCycles = parseInt(formData.batteryCycles)
-      if (formData.flightMode) payload.flightMode = formData.flightMode
-      if (formData.weather) payload.weather = formData.weather.trim()
-      if (formData.temperature) payload.temperature = parseFloat(formData.temperature)
-      if (formData.windSpeed) payload.windSpeed = parseFloat(formData.windSpeed)
-      if (formData.location) payload.location = formData.location.trim()
-      if (formData.notes) payload.notes = formData.notes.trim()
-      
+      const payload = { ...data, date: new Date(data.date).toISOString() }
       if (isEditMode && id) {
         await flightApi.update(parseInt(id), payload)
       } else {
@@ -165,15 +113,13 @@ export default function FlightForm() {
   return (
     <div className="flight-form">
       <h1>{isEditMode ? 'Edit Flight' : 'Log Flight'}</h1>
-      
-      <form onSubmit={handleSubmit}>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="form-group">
           <label htmlFor="helicopterId">Helicopter *</label>
           <select
             id="helicopterId"
-            name="helicopterId"
-            value={formData.helicopterId}
-            onChange={handleChange}
+            {...register('helicopterId', { valueAsNumber: true })}
             className={errors.helicopterId ? 'error' : ''}
           >
             <option value="">Select helicopter</option>
@@ -183,7 +129,7 @@ export default function FlightForm() {
               </option>
             ))}
           </select>
-          {errors.helicopterId && <span className="error-message">{errors.helicopterId}</span>}
+          {errors.helicopterId && <span className="error-message">{errors.helicopterId.message}</span>}
         </div>
 
         <div className="form-row">
@@ -192,12 +138,10 @@ export default function FlightForm() {
             <input
               type="date"
               id="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
+              {...register('date')}
               className={errors.date ? 'error' : ''}
             />
-            {errors.date && <span className="error-message">{errors.date}</span>}
+            {errors.date && <span className="error-message">{errors.date.message}</span>}
           </div>
 
           <div className="form-group">
@@ -206,12 +150,10 @@ export default function FlightForm() {
               type="number"
               step="0.1"
               id="duration"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
+              {...register('duration', { valueAsNumber: true })}
               className={errors.duration ? 'error' : ''}
             />
-            {errors.duration && <span className="error-message">{errors.duration}</span>}
+            {errors.duration && <span className="error-message">{errors.duration.message}</span>}
           </div>
         </div>
 
@@ -220,9 +162,7 @@ export default function FlightForm() {
             <label htmlFor="flightMode">Flight Mode</label>
             <select
               id="flightMode"
-              name="flightMode"
-              value={formData.flightMode}
-              onChange={handleChange}
+              {...register('flightMode')}
             >
               <option value="">Select mode</option>
               <option value="3D">3D</option>
@@ -237,12 +177,10 @@ export default function FlightForm() {
             <input
               type="number"
               id="batteryCycles"
-              name="batteryCycles"
-              value={formData.batteryCycles}
-              onChange={handleChange}
+              {...register('batteryCycles', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
               className={errors.batteryCycles ? 'error' : ''}
             />
-            {errors.batteryCycles && <span className="error-message">{errors.batteryCycles}</span>}
+            {errors.batteryCycles && <span className="error-message">{errors.batteryCycles.message}</span>}
           </div>
         </div>
 
@@ -251,9 +189,7 @@ export default function FlightForm() {
           <input
             type="text"
             id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
+            {...register('location')}
             placeholder="e.g. Flying field, Park"
           />
         </div>
@@ -264,9 +200,7 @@ export default function FlightForm() {
             <input
               type="text"
               id="weather"
-              name="weather"
-              value={formData.weather}
-              onChange={handleChange}
+              {...register('weather')}
               placeholder="e.g. Sunny, Cloudy"
             />
           </div>
@@ -277,9 +211,7 @@ export default function FlightForm() {
               type="number"
               step="0.1"
               id="temperature"
-              name="temperature"
-              value={formData.temperature}
-              onChange={handleChange}
+              {...register('temperature', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
             />
           </div>
 
@@ -289,12 +221,10 @@ export default function FlightForm() {
               type="number"
               step="0.1"
               id="windSpeed"
-              name="windSpeed"
-              value={formData.windSpeed}
-              onChange={handleChange}
+              {...register('windSpeed', { setValueAs: (v: string) => v === '' ? undefined : Number(v) })}
               className={errors.windSpeed ? 'error' : ''}
             />
-            {errors.windSpeed && <span className="error-message">{errors.windSpeed}</span>}
+            {errors.windSpeed && <span className="error-message">{errors.windSpeed.message}</span>}
           </div>
         </div>
 
@@ -302,9 +232,7 @@ export default function FlightForm() {
           <label htmlFor="notes">Notes</label>
           <textarea
             id="notes"
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
+            {...register('notes')}
             rows={4}
             placeholder="Any notes about the flight..."
           />

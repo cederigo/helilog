@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { helicopterApi } from '../lib/api'
-import type { Helicopter } from '../types'
+import type { Helicopter } from '@helilog/shared'
 
 export default function HelicopterList() {
   const [helicopters, setHelicopters] = useState<Helicopter[]>([])

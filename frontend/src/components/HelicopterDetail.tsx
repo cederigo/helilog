@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { helicopterApi, maintenanceApi } from '../lib/api'
-import type { Helicopter, Flight, MaintenanceRecord } from '../types'
+import type { Helicopter, Flight, MaintenanceRecord } from '@helilog/shared'
 
 export default function HelicopterDetail() {
   const { id } = useParams<{ id: string }>()

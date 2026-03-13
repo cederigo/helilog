@@ -3,9 +3,12 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
+COPY packages/shared ./packages/shared
+COPY backend ./backend
+
 RUN npm ci
 
-COPY . .
+WORKDIR /app/backend
 RUN npx prisma generate && npm run build
 
 FROM node:24-alpine
@@ -13,13 +16,17 @@ FROM node:24-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+COPY packages/shared ./packages/shared
+COPY backend/package*.json ./backend/
 
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./prisma.config.ts
+RUN npm ci --omit=dev
 
-# Generate Prisma Client
+WORKDIR /app/backend
+
+COPY --from=build /app/backend/dist ./dist
+COPY --from=build /app/backend/prisma ./prisma
+COPY --from=build /app/backend/prisma.config.ts ./prisma.config.ts
+
 RUN npx prisma generate
 
 EXPOSE 3000
