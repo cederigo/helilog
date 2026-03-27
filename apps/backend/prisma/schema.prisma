@@ -9,57 +9,97 @@ datasource db {
   provider = "sqlite"
 }
 
-model Helicopter {
+model Import {
+  id          Int      @id @default(autoincrement())
+  format      String
+  description String?
+  rawDataPath String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  models Model[]
+  flights     Flight[]
+  batteries   Battery[]
+}
+
+model Model {
   id           Int      @id @default(autoincrement())
   name         String   @unique
-  model        String
-  manufacturer String?
-  rotorDiameter Float?
-  weight       Float?
-  totalHours   Float    @default(0)
   maintenanceInterval Float?
   lastMaintenance     DateTime?
+  importId     Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  import       Import?           @relation(fields: [importId], references: [id], onDelete: Cascade)
   flights      Flight[]
   maintenance  MaintenanceRecord[]
 
   @@index([name])
+	@@map("Model")
 }
 
 model Flight {
   id           Int      @id @default(autoincrement())
-  helicopterId Int
+  modelId Int 
   date         DateTime
-  duration     Int      // in minutes
-  batteryCycles Int?
-  flightMode   String?  // 3D, Sport, GPS, Manual
-  weather      String?
-  temperature  Float?
-  windSpeed    Float?
-  notes        String?
-  location     String?
+  duration     Int      // in seconds
+  minVoltage   Float? // minimum voltage during flight
+  maxCurrent   Float? // maximum current during flight
+  maxPower   Float? // maximum power during flight
+  chargeUsed Float? // mAh consumed during flight
+  maxRPM       Int?   // maximum headspeed during flight
+  importId     Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  helicopter   Helicopter @relation(fields: [helicopterId], references: [id], onDelete: Cascade)
+  model       Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  import       Import?    @relation(fields: [importId], references: [id], onDelete: Cascade)
+  telemetry    FlightTelemetryPoint[]
 
-  @@index([helicopterId])
+  @@index([modelId])
   @@index([date])
+}
+
+model FlightTelemetryPoint {
+  id         Int      @id @default(autoincrement())
+  flightId   Int
+  timestamp  DateTime
+  current    Float    // A
+  voltage    Float    // V
+  chargeUsed Float    // mAh consumed
+  headspeed  Int      // RPM
+  pwm        Int      // throttle %
+  temp       Float    // °C
+
+  flight     Flight   @relation(fields: [flightId], references: [id], onDelete: Cascade)
+
+  @@index([flightId])
+}
+
+model Battery {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  capacity  Int      // mAh
+  cells     Int      // number of cells
+  importId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  import    Import?  @relation(fields: [importId], references: [id], onDelete: Cascade)
 }
 
 model MaintenanceRecord {
   id           Int      @id @default(autoincrement())
-  helicopterId Int
+  modelId Int 
   date         DateTime
   description  String
   hoursAtMaintenance Float
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  helicopter   Helicopter @relation(fields: [helicopterId], references: [id], onDelete: Cascade)
+  model  Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
-  @@index([helicopterId])
+  @@index([modelId])
   @@index([date])
 }

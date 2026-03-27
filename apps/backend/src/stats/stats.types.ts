@@ -3,12 +3,11 @@ export interface DashboardStats {
   totalHours: number
   averageDuration: number
   flightsThisMonth: number
-  mostFlownHelicopter: {
+  topModels: Array<{
     id: number
     name: string
-    model: string
     flightCount: number
-  } | null
+  }>
 }
 
 export interface WeeklyTrend {
@@ -25,5 +24,5 @@ export interface MonthlyTrend {
 export interface FlightSummary {
   duration: number
   date: Date
-  helicopterId: number
+  modelId: number
 }

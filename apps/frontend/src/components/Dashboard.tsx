@@ -1,209 +1,117 @@
 import { useNavigate } from 'react-router-dom'
 import { useQueries } from '@tanstack/react-query'
-import { statsApi, maintenanceApi, statsKeys, maintenanceKeys } from '../lib/api'
+import { statsApi, statsKeys } from '../lib/api'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import FlightTable from './FlightTable'
 
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  const [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery] = useQueries({
+  const [statsQuery, recentQuery] = useQueries({
     queries: [
       { queryKey: statsKeys.overview, queryFn: statsApi.getStats },
       { queryKey: statsKeys.recent, queryFn: statsApi.getRecent },
-      { queryKey: maintenanceKeys.alerts, queryFn: maintenanceApi.getAlerts },
-      { queryKey: statsKeys.weeklyTrends, queryFn: statsApi.getWeeklyTrends },
-      { queryKey: statsKeys.monthlyTrends, queryFn: statsApi.getMonthlyTrends },
     ],
   })
 
-  const isPending = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].some(
-    (q) => q.isPending,
-  )
-  const error = [statsQuery, recentQuery, alertsQuery, weeklyQuery, monthlyQuery].find(
-    (q) => q.error,
-  )?.error
+  const isPending = [statsQuery, recentQuery].some((q) => q.isPending)
+  const error = [statsQuery, recentQuery].find((q) => q.error)?.error
 
-  if (isPending) return <div className="loading">Loading dashboard...</div>
-  if (error) return <div className="error">Error: {error.message}</div>
+  if (isPending)
+    return <p className="py-12 text-center text-muted-foreground">Loading dashboard…</p>
+  if (error) return <p className="py-12 text-center text-brand-punch">Error: {error.message}</p>
 
   const stats = statsQuery.data
   const recentFlights = recentQuery.data ?? []
-  const maintenanceAlerts = alertsQuery.data?.alerts ?? []
-  const weeklyTrends = weeklyQuery.data?.weeks ?? []
-  const monthlyTrends = monthlyQuery.data?.months ?? []
+
+  const statCards = [
+    { label: 'Total Flights', value: stats?.totalFlights ?? 0 },
+    { label: 'Total Hours', value: `${stats?.totalHours.toFixed(2) ?? '0.00'}h` },
+    { label: 'Avg Duration', value: `${((stats?.averageDuration ?? 0) / 60).toFixed(1)} min` },
+    { label: 'Flights This Month', value: stats?.flightsThisMonth ?? 0 },
+  ]
 
   return (
-    <div className="dashboard">
-      <div className="header">
-        <h1>Dashboard</h1>
-        <div className="quick-actions">
-          <button onClick={() => navigate('/flights/new')} className="btn-primary">
-            Log Flight
-          </button>
-          <button onClick={() => navigate('/helicopters/new')} className="btn-secondary">
-            Add Helicopter
-          </button>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="tracking-widest uppercase text-xs"
+            onClick={() => navigate('/models/new')}
+          >
+            Log flight
+          </Button>
         </div>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Flights</h3>
-          <p className="stat-value">{stats?.totalFlights || 0}</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>Total Hours</h3>
-          <p className="stat-value">{stats?.totalHours.toFixed(2) || '0.00'}h</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>Average Duration</h3>
-          <p className="stat-value">{stats?.averageDuration.toFixed(1) || '0.0'} min</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>Flights This Month</h3>
-          <p className="stat-value">{stats?.flightsThisMonth || 0}</p>
-        </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {statCards.map(({ label, value }) => (
+          <Card key={label} accent>
+            <CardContent className="p-4 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                {label}
+              </p>
+              <p className="text-xl font-bold ">{value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {stats?.mostFlownHelicopter && (
-        <div className="most-flown-card">
-          <h2>Most Flown</h2>
-          <p>
-            <strong>{stats.mostFlownHelicopter.name}</strong> ({stats.mostFlownHelicopter.model})
-          </p>
-          <p>{stats.mostFlownHelicopter.flightCount} flights</p>
-        </div>
-      )}
-
-      {maintenanceAlerts.length > 0 && (
-        <div className="maintenance-alerts-card">
-          <h2>⚠️ Maintenance Alerts</h2>
-          <div className="alerts-list">
-            {maintenanceAlerts.map((alert) => (
-              <div
-                key={alert.helicopter.id}
-                className={`alert-item ${alert.status}`}
-                onClick={() => navigate(`/helicopters/${alert.helicopter.id}`)}
-              >
-                <div className="alert-header">
-                  <strong>{alert.helicopter.name}</strong>
-                  <span className={`status-badge ${alert.status}`}>
-                    {alert.status === 'overdue' ? 'OVERDUE' : 'DUE SOON'}
+      {/* Most Flown */}
+      {stats?.topModels && stats.topModels.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Most Flown (Top 5)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4 flex flex-col gap-2">
+            {stats.topModels.map((model, i) => (
+              <div key={model.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-4 text-right">{i + 1}</span>
+                  <span
+                    className="text-sm font-medium text-brand-sky hover:underline cursor-pointer"
+                    onClick={() => navigate(`/models/${model.id}`)}
+                  >
+                    {model.name}
                   </span>
                 </div>
-                <div className="alert-details">
-                  <span>{alert.totalHours.toFixed(1)}h flown</span>
-                  <span>•</span>
-                  <span>Last maintenance: {alert.lastMaintenanceHours.toFixed(1)}h</span>
-                  <span>•</span>
-                  {alert.status === 'overdue' ? (
-                    <span className="overdue-text">{alert.hoursOverdue.toFixed(1)}h overdue</span>
-                  ) : (
-                    <span>Due at {alert.nextDueAt.toFixed(1)}h</span>
-                  )}
-                </div>
+                <span className="text-xs text-muted-foreground">{model.flightCount} flights</span>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="trends-section">
-        <div className="trend-card">
-          <h2>Weekly Flight Activity</h2>
-          {weeklyTrends.length === 0 ? (
-            <p className="no-data">Not enough data to show trends</p>
+      {/* Recent Flights */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 pt-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Recent Flights
+            </CardTitle>
+            <span
+              className="text-xs text-brand-sky hover:underline cursor-pointer"
+              onClick={() => navigate('/flights')}
+            >
+              View All
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {recentFlights.length === 0 ? (
+            <p className="text-center text-muted-foreground text-sm py-8">No recent flights</p>
           ) : (
-            <div className="trend-bars">
-              {weeklyTrends.map((week, idx) => {
-                const maxCount = Math.max(...weeklyTrends.map((w) => w.count), 1)
-                const percentage = (week.count / maxCount) * 100
-                return (
-                  <div key={idx} className="trend-bar-item">
-                    <div className="bar-container">
-                      <div className="bar" style={{ width: `${percentage}%` }}>
-                        {week.count > 0 && <span className="bar-label">{week.count}</span>}
-                      </div>
-                    </div>
-                    <div className="bar-date">
-                      {new Date(week.week).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <FlightTable flights={recentFlights} />
           )}
-        </div>
-
-        <div className="trend-card">
-          <h2>Monthly Flight Hours</h2>
-          {monthlyTrends.length === 0 ? (
-            <p className="no-data">Not enough data to show trends</p>
-          ) : (
-            <div className="trend-bars">
-              {monthlyTrends.map((month, idx) => {
-                const maxHours = Math.max(...monthlyTrends.map((m) => m.hours), 1)
-                const percentage = (month.hours / maxHours) * 100
-                return (
-                  <div key={idx} className="trend-bar-item">
-                    <div className="bar-container">
-                      <div className="bar" style={{ width: `${percentage}%` }}>
-                        {month.hours > 0 && (
-                          <span className="bar-label">{month.hours.toFixed(1)}h</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="bar-date">
-                      {new Date(month.month + '-01').toLocaleDateString('en-US', {
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="recent-flights-card">
-        <div className="card-header">
-          <h2>Recent Flights</h2>
-          <button onClick={() => navigate('/flights')} className="btn-link">
-            View All
-          </button>
-        </div>
-        {recentFlights.length === 0 ? (
-          <p>No recent flights</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Helicopter</th>
-                <th>Duration</th>
-                <th>Mode</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentFlights.map((flight) => (
-                <tr key={flight.id}>
-                  <td>{new Date(flight.date).toLocaleDateString()}</td>
-                  <td>{flight.helicopter?.name || `Heli #${flight.helicopterId}`}</td>
-                  <td>{flight.duration} min</td>
-                  <td>{flight.flightMode || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

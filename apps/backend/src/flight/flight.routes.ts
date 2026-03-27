@@ -8,7 +8,7 @@ import {
   flightQuerySchema as baseFlightQuerySchema,
 } from '@helilog/shared'
 import { FlightNotFoundError } from './flight.errors'
-import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
+import { ModelNotFoundError } from '../model/model.errors'
 
 const createFlightSchema = baseCreateFlightSchema.extend({
   date: z.iso.datetime().transform((s) => new Date(s)),
@@ -20,10 +20,6 @@ const updateFlightSchema = baseUpdateFlightSchema.extend({
     .optional(),
 })
 const flightQuerySchema = baseFlightQuerySchema.extend({
-  helicopterId: z
-    .string()
-    .transform((s) => parseInt(s))
-    .optional(),
   startDate: z
     .string()
     .transform((s) => new Date(s))
@@ -40,15 +36,19 @@ const flightQuerySchema = baseFlightQuerySchema.extend({
     .string()
     .optional()
     .transform((s) => (s ? parseInt(s) : 50)),
+  modelId: z
+    .string()
+    .optional()
+    .transform((s) => (s ? parseInt(s) : undefined)),
 })
 
 const flights = new Hono()
   .get('/', zValidator('query', flightQuerySchema), async (c) => {
-    const { startDate, endDate, sortBy, sortOrder, search, flightMode, weather, page, limit } =
+    const { startDate, endDate, sortBy, sortOrder, search, modelId, page, limit } =
       c.req.valid('query')
 
     const { flights: flightList, total } = await flightService.list(
-      { startDate, endDate, sortBy, sortOrder, search, flightMode, weather },
+      { startDate, endDate, sortBy, sortOrder, search, modelId },
       { page, limit },
     )
 
@@ -73,7 +73,7 @@ const flights = new Hono()
       const flight = await flightService.logFlight(data)
       return c.json(flight, 201)
     } catch (e) {
-      if (e instanceof HelicopterNotFoundError) return c.json({ error: e.message }, 404)
+      if (e instanceof ModelNotFoundError) return c.json({ error: e.message }, 404)
       throw e
     }
   })

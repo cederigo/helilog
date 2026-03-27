@@ -1,0 +1,23 @@
+27.06.2025 11:37:50;VStabi Start -- OXY 5 -- 0020029606 -- V 6.4 -- pl 30
+27.06.2025 11:37:50 Gut;Reset Grund: Power On
+27.06.2025 11:37:51 Gut;Bank 2 geladen
+27.06.2025 11:37:51 Gut;Bank 3 geladen
+27.06.2025 11:37:51 Gut;Motorschalter Motor Aus
+27.06.2025 11:37:51 Gut;Motorschalter Leerlauf Durchstarten
+27.06.2025 11:37:53 Gut;HW Regler erkannt
+27.06.2025 11:37:53 Gut;Kalibrierung beendet
+27.06.2025 11:37:57 Gut;Neuer Akku: Neuer Akku 16
+27.06.2025 11:39:18 Gut;Motorschalter Leerlauf Durchstarten
+27.06.2025 11:39:19 Gut;Motorschalter Motor An
+27.06.2025 11:39:20 Gut;Motorschalter Leerlauf Durchstarten
+27.06.2025 11:39:22 Gut;Motorschalter Motor Aus
+27.06.2025 11:39:22 Info;Aus - Regler - Umin:27.1V Imax:0.4A Temp:25°
+27.06.2025 11:40:00 Gut;Motorschalter Leerlauf Durchstarten
+27.06.2025 11:40:01 Gut;Motorschalter Motor An
+27.06.2025 11:40:17 Gut;Motorschalter Leerlauf Durchstarten
+27.06.2025 11:40:18 Gut;Motorschalter Motor Aus
+27.06.2025 11:40:19 Info;Aus - Regler - Umin:26.9V Imax:12.6A Temp:27°
+27.06.2025 11:40:26 Gut;Bank 2 geladen
+27.06.2025 11:40:26 Gut;Bank 1 geladen
+27.06.2025 11:40:50;VBar Logfile End -- 27.06.2025 -- 11:40:50
+27.06.2025 11:40:50 Gut;HW Regler Getrennt

@@ -7,7 +7,7 @@ export class PrismaStatsRepository implements StatsRepository {
 
   async getAllFlightSummaries(): Promise<FlightSummary[]> {
     return this.prisma.flight.findMany({
-      select: { duration: true, date: true, helicopterId: true },
+      select: { duration: true, date: true, modelId: true },
     })
   }
 
@@ -27,10 +27,10 @@ export class PrismaStatsRepository implements StatsRepository {
     })
   }
 
-  async getHelicopterById(id: number): Promise<{ id: number; name: string; model: string } | null> {
-    return this.prisma.helicopter.findUnique({
-      where: { id },
-      select: { id: true, name: true, model: true },
+  async getModelsByIds(ids: number[]): Promise<Array<{ id: number; name: string }>> {
+    return this.prisma.model.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true },
     })
   }
 }

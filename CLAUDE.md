@@ -106,3 +106,22 @@ docker-compose up  # Uses both
 ## OpenSpec
 
 The `openspec/` directory contains a spec-driven development workflow. Changes go through proposal → design → specs → implementation phases. Archived completed changes live in `openspec/changes/archive/`.
+
+## Coding Standards
+
+- Keep functions small and easy to read.
+- Use explicit parameter/return types when they improve clarity.
+- Prefer `unknown` over `any` for unknown values.
+- Use `const` by default, `let` only when reassignment is needed.
+- Prefer `for...of`, optional chaining, nullish coalescing, and template literals.
+- Use early returns to reduce nesting.
+- Use `async/await` instead of promise chains.
+- Throw `Error` objects with clear messages.
+- Extract magic numbers/strings into named constants when reused.
+
+## Testing
+
+- Keep assertions inside `test()`/`it()` blocks.
+- Prefer async/await over done callbacks.
+- Do not commit `.only` or `.skip`.
+- Prefer module-level mocks (for example `mock.module(...)`) over adding DI-only test seams when possible.

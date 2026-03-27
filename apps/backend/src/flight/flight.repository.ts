@@ -1,6 +1,6 @@
 import {
   Flight,
-  FlightWithHelicopter,
+  FlightWithModel,
   CreateFlightInput,
   UpdateFlightInput,
   FlightFilters,
@@ -11,12 +11,12 @@ export interface FlightRepository {
   findMany(
     filters: FlightFilters,
     pagination: PaginationParams,
-  ): Promise<{ flights: FlightWithHelicopter[]; total: number }>
-  findById(id: number): Promise<FlightWithHelicopter | null>
+  ): Promise<{ flights: FlightWithModel[]; total: number }>
+  findById(id: number): Promise<FlightWithModel | null>
   create(input: CreateFlightInput): Promise<Flight>
   update(id: number, input: UpdateFlightInput): Promise<Flight>
   delete(id: number): Promise<void>
-  countByHelicopterId(helicopterId: number): Promise<number>
-  sumDurationByHelicopterId(helicopterId: number): Promise<number>
-  findRecent(limit: number): Promise<FlightWithHelicopter[]>
+  countByModelId(modelId: number): Promise<number>
+  sumDurationByModelId(modelId: number): Promise<number>
+  findRecent(limit: number): Promise<FlightWithModel[]>
 }

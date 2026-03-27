@@ -1,49 +1,51 @@
 import { MaintenanceRepository } from './maintenance.repository'
 import { MaintenanceRecord, CreateMaintenanceInput, MaintenanceAlert } from './maintenance.types'
-import { HelicopterRepository } from '../helicopter/helicopter.repository'
-import { HelicopterNotFoundError } from '../helicopter/helicopter.errors'
+import { ModelRepository } from '../model/model.repository'
+import { ModelNotFoundError } from '../model/model.errors'
 
 export class MaintenanceService {
   constructor(
     private readonly maintenance: MaintenanceRepository,
-    private readonly helicopters: HelicopterRepository,
+    private readonly models: ModelRepository,
   ) {}
 
-  async getByHelicopter(helicopterId: number): Promise<MaintenanceRecord[]> {
-    return this.maintenance.findByHelicopterId(helicopterId)
+  async getByModel(modelId: number): Promise<MaintenanceRecord[]> {
+    return this.maintenance.findByModelId(modelId)
   }
 
   async record(input: CreateMaintenanceInput): Promise<MaintenanceRecord> {
-    const helicopter = await this.helicopters.findById(input.helicopterId)
-    if (!helicopter) throw new HelicopterNotFoundError(input.helicopterId)
+    const model = await this.models.findById(input.modelId)
+    if (!model) throw new ModelNotFoundError(input.modelId)
 
     const record = await this.maintenance.create(input)
-    await this.helicopters.updateLastMaintenance(input.helicopterId, input.date)
+    await this.models.updateLastMaintenance(input.modelId, input.date)
     return record
   }
 
   async getAlerts(): Promise<{ alerts: MaintenanceAlert[] }> {
-    const helicopters = await this.maintenance.findHelicoptersWithLatestMaintenance()
+    const modelList = await this.maintenance.findModelsWithLatestMaintenance()
 
-    const alerts = helicopters
-      .filter((h) => h.maintenanceInterval && h.maintenanceInterval > 0)
-      .map((h) => {
-        const lastMaintenanceHours = h.maintenance[0]?.hoursAtMaintenance ?? 0
-        const hoursSinceMaintenance = h.totalHours - lastMaintenanceHours
-        const nextDue = lastMaintenanceHours + (h.maintenanceInterval ?? 0)
-        const hoursOverdue = h.totalHours - nextDue
+    const alerts = modelList
+      .filter((m) => m.maintenanceInterval && m.maintenanceInterval > 0)
+      .map((m) => {
+        const totalSeconds = m.flights.reduce((sum, f) => sum + f.duration, 0)
+        const totalHours = totalSeconds / 3600
+        const lastMaintenanceHours = m.maintenance[0]?.hoursAtMaintenance ?? 0
+        const hoursSinceMaintenance = totalHours - lastMaintenanceHours
+        const nextDue = lastMaintenanceHours + (m.maintenanceInterval ?? 0)
+        const hoursOverdue = totalHours - nextDue
 
         return {
-          helicopter: { id: h.id, name: h.name, model: h.model },
-          totalHours: h.totalHours,
-          maintenanceInterval: h.maintenanceInterval!,
+          model: { id: m.id, name: m.name },
+          totalHours: Math.round(totalHours * 100) / 100,
+          maintenanceInterval: m.maintenanceInterval!,
           lastMaintenanceHours,
           hoursSinceMaintenance: Math.round(hoursSinceMaintenance * 100) / 100,
           nextDueAt: Math.round(nextDue * 100) / 100,
           hoursOverdue: Math.round(hoursOverdue * 100) / 100,
           status: (hoursOverdue > 0
             ? 'overdue'
-            : hoursSinceMaintenance >= (h.maintenanceInterval ?? 0) - 1
+            : hoursSinceMaintenance >= (m.maintenanceInterval ?? 0) - 1
               ? 'due_soon'
               : 'ok') as MaintenanceAlert['status'],
         }

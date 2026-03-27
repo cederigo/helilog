@@ -1,11 +1,11 @@
 import {
   MaintenanceRecord,
   CreateMaintenanceInput,
-  HelicopterMaintenanceData,
+  ModelMaintenanceData,
 } from './maintenance.types'
 
 export interface MaintenanceRepository {
-  findByHelicopterId(helicopterId: number): Promise<MaintenanceRecord[]>
+  findByModelId(modelId: number): Promise<MaintenanceRecord[]>
   create(input: CreateMaintenanceInput): Promise<MaintenanceRecord>
-  findHelicoptersWithLatestMaintenance(): Promise<HelicopterMaintenanceData[]>
+  findModelsWithLatestMaintenance(): Promise<ModelMaintenanceData[]>
 }

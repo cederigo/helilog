@@ -17,7 +17,8 @@
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "node --import tsx/esm --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@helilog/shared": "workspace:*",
@@ -26,12 +27,16 @@
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "adm-zip": "^0.5.16",
+    "cheerio": "^1.2.0",
     "dotenv": "^17.3.1",
     "hono": "^4.12.7",
     "prisma": "^7.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/cheerio": "^1.0.0",
     "@types/node": "^25.5.0",
     "esbuild": "^0.25.12",
     "tsx": "^4.21.0",

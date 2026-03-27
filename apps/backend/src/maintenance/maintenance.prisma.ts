@@ -3,15 +3,15 @@ import { MaintenanceRepository } from './maintenance.repository'
 import {
   MaintenanceRecord,
   CreateMaintenanceInput,
-  HelicopterMaintenanceData,
+  ModelMaintenanceData,
 } from './maintenance.types'
 
 export class PrismaMaintenanceRepository implements MaintenanceRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByHelicopterId(helicopterId: number): Promise<MaintenanceRecord[]> {
+  async findByModelId(modelId: number): Promise<MaintenanceRecord[]> {
     return this.prisma.maintenanceRecord.findMany({
-      where: { helicopterId },
+      where: { modelId },
       orderBy: { date: 'desc' },
     })
   }
@@ -22,9 +22,12 @@ export class PrismaMaintenanceRepository implements MaintenanceRepository {
     })
   }
 
-  async findHelicoptersWithLatestMaintenance(): Promise<HelicopterMaintenanceData[]> {
-    return this.prisma.helicopter.findMany({
+  async findModelsWithLatestMaintenance(): Promise<ModelMaintenanceData[]> {
+    return this.prisma.model.findMany({
       include: {
+        flights: {
+          select: { duration: true },
+        },
         maintenance: {
           orderBy: { date: 'desc' },
           take: 1,

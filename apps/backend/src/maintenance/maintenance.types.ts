@@ -5,10 +5,9 @@ import type { MaintenanceRecord } from '@prisma/client'
 export { MaintenanceRecord }
 
 export interface MaintenanceAlert {
-  helicopter: {
+  model: {
     id: number
     name: string
-    model: string
   }
   totalHours: number
   maintenanceInterval: number
@@ -21,11 +20,10 @@ export interface MaintenanceAlert {
 
 export type CreateMaintenanceInput = Omit<SharedCreateMaintenanceInput, 'date'> & { date: Date }
 
-export interface HelicopterMaintenanceData {
+export interface ModelMaintenanceData {
   id: number
   name: string
-  model: string
-  totalHours: number
   maintenanceInterval: number | null
+  flights: Array<{ duration: number }>
   maintenance: Array<{ hoursAtMaintenance: number }>
 }

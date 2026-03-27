@@ -1,54 +1,53 @@
 import { z } from 'zod'
 
-export const createHelicopterSchema = z.object({
+export const createModelSchema = z.object({
   name: z.string().min(1),
-  model: z.string().min(1),
-  manufacturer: z.string().optional(),
-  rotorDiameter: z.number().positive().optional(),
-  weight: z.number().positive().optional(),
   maintenanceInterval: z.number().positive().optional(),
 })
 
-export const updateHelicopterSchema = createHelicopterSchema.partial()
+export const updateModelSchema = createModelSchema.partial()
 
 export const createFlightSchema = z.object({
-  helicopterId: z.number().int().positive(),
+  modelId: z.number().int().positive(),
   date: z.iso.datetime(),
   duration: z.number().int().positive(),
-  batteryCycles: z.number().int().positive().optional(),
-  flightMode: z.enum(['3D', 'Sport', 'GPS', 'Manual']).optional(),
-  weather: z.string().optional(),
-  temperature: z.number().optional(),
-  windSpeed: z.number().optional(),
-  notes: z.string().max(1000).optional(),
-  location: z.string().optional(),
 })
 
 export const updateFlightSchema = createFlightSchema.partial()
 
 export const flightQuerySchema = z.object({
-  // helicopterId: z.number().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   sortBy: z.enum(['date', 'duration']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
+  modelId: z.string().optional(),
   search: z.string().optional(),
-  flightMode: z.string().optional(),
-  weather: z.string().optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
 })
 
 export const createMaintenanceSchema = z.object({
-  helicopterId: z.number().int().positive(),
+  modelId: z.number().int().positive(),
   date: z.iso.datetime(),
   description: z.string().min(1),
   hoursAtMaintenance: z.number().positive(),
 })
 
-export type CreateHelicopterInput = z.infer<typeof createHelicopterSchema>
-export type UpdateHelicopterInput = z.infer<typeof updateHelicopterSchema>
+export const createBatterySchema = z.object({
+  name: z.string().min(1),
+  capacity: z.number().int().positive(),
+})
+
+export const createImportSchema = z.object({
+  format: z.string().min(1),
+  description: z.string().optional(),
+})
+
+export type CreateModelInput = z.infer<typeof createModelSchema>
+export type UpdateModelInput = z.infer<typeof updateModelSchema>
 export type CreateFlightInput = z.infer<typeof createFlightSchema>
 export type UpdateFlightInput = z.infer<typeof updateFlightSchema>
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>
 export type FlightQueryInput = z.infer<typeof flightQuerySchema>
+export type CreateBatteryInput = z.infer<typeof createBatterySchema>
+export type CreateImportInput = z.infer<typeof createImportSchema>

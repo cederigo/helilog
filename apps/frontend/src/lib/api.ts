@@ -9,35 +9,35 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const client = hc<AppType>(API_BASE_URL)
 
-// Helicopter API
-export const helicopterApi = {
+// Model API
+export const modelApi = {
   getAll: async () => {
-    const res = await client.api.helicopters.$get()
+    const res = await client.api.models.$get()
     return res.json()
   },
   getById: async (id: number) => {
-    const res = await client.api.helicopters[':id'].$get({ param: { id: String(id) } })
+    const res = await client.api.models[':id'].$get({ param: { id: String(id) } })
     const body = await res.json()
     if ('error' in body) throw new Error(body.error)
     return body
   },
-  create: async (data: Parameters<typeof client.api.helicopters.$post>[0]['json']) => {
-    const res = await client.api.helicopters.$post({ json: data })
+  create: async (data: Parameters<typeof client.api.models.$post>[0]['json']) => {
+    const res = await client.api.models.$post({ json: data })
     const body = await res.json()
     if ('error' in body) throw new Error(body.error)
     return body
   },
   update: async (
     id: number,
-    data: Parameters<(typeof client.api.helicopters)[':id']['$put']>[0]['json'],
+    data: Parameters<(typeof client.api.models)[':id']['$put']>[0]['json'],
   ) => {
-    const res = await client.api.helicopters[':id'].$put({ param: { id: String(id) }, json: data })
+    const res = await client.api.models[':id'].$put({ param: { id: String(id) }, json: data })
     const body = await res.json()
     if ('error' in body) throw new Error(body.error)
     return body
   },
   delete: async (id: number) => {
-    const res = await client.api.helicopters[':id'].$delete({ param: { id: String(id) } })
+    const res = await client.api.models[':id'].$delete({ param: { id: String(id) } })
     return res.json()
   },
 }
@@ -103,8 +103,8 @@ export const maintenanceApi = {
     if ('error' in body) throw new Error(body.error)
     return body
   },
-  getForHelicopter: async (id: number) => {
-    const res = await client.api.maintenance.helicopters[':id'].maintenance.$get({
+  getForModel: async (id: number) => {
+    const res = await client.api.maintenance.models[':id'].maintenance.$get({
       param: { id: String(id) },
     })
     return res.json()
@@ -116,9 +116,9 @@ export const maintenanceApi = {
 }
 
 // Query key factories
-export const helicopterKeys = {
-  all: ['helicopters'] as const,
-  detail: (id: number) => ['helicopters', id] as const,
+export const modelKeys = {
+  all: ['models'] as const,
+  detail: (id: number) => ['models', id] as const,
 }
 
 export const flightKeys = {
@@ -134,6 +134,6 @@ export const statsKeys = {
 }
 
 export const maintenanceKeys = {
-  forHelicopter: (id: number) => ['maintenance', 'helicopter', id] as const,
+  forModel: (id: number) => ['maintenance', 'model', id] as const,
   alerts: ['maintenance', 'alerts'] as const,
 }

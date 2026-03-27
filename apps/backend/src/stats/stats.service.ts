@@ -15,40 +15,37 @@ export class StatsService {
     const allFlights = await this.stats.getAllFlightSummaries()
 
     const totalFlights = allFlights.length
-    const totalMinutes = allFlights.reduce((sum, f) => sum + f.duration, 0)
-    const totalHours = totalMinutes / 60
-    const averageDuration = totalFlights > 0 ? totalMinutes / totalFlights : 0
+    const totalSeconds = allFlights.reduce((sum, f) => sum + f.duration, 0)
+    const totalHours = totalSeconds / 3600
+    const averageDuration = totalFlights > 0 ? totalSeconds / totalFlights : 0
     const flightsThisMonth = allFlights.filter((f) => f.date >= startOfMonth).length
 
-    const flightsByHeli = allFlights.reduce(
+    const flightsByModel = allFlights.reduce(
       (acc, f) => {
-        acc[f.helicopterId] = (acc[f.helicopterId] || 0) + 1
+        acc[f.modelId] = (acc[f.modelId] || 0) + 1
         return acc
       },
       {} as Record<number, number>,
     )
 
-    let mostFlownHeliId: number | null = null
-    let maxFlights = 0
-    for (const [heliId, count] of Object.entries(flightsByHeli)) {
-      if (count > maxFlights) {
-        maxFlights = count
-        mostFlownHeliId = parseInt(heliId)
-      }
-    }
+    const top5Ids = Object.entries(flightsByModel)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id, count]) => ({ id: parseInt(id), count }))
 
-    let mostFlownHelicopter = null
-    if (mostFlownHeliId !== null) {
-      const heli = await this.stats.getHelicopterById(mostFlownHeliId)
-      if (heli) mostFlownHelicopter = { ...heli, flightCount: maxFlights }
-    }
+    const models = await this.stats.getModelsByIds(top5Ids.map((m) => m.id))
+    const modelMap = new Map(models.map((m) => [m.id, m.name]))
+
+    const topModels = top5Ids
+      .filter((m) => modelMap.has(m.id))
+      .map((m) => ({ id: m.id, name: modelMap.get(m.id)!, flightCount: m.count }))
 
     return {
       totalFlights,
       totalHours: Math.round(totalHours * 100) / 100,
       averageDuration: Math.round(averageDuration),
       flightsThisMonth,
-      mostFlownHelicopter,
+      topModels,
     }
   }
 
@@ -100,8 +97,8 @@ export class StatsService {
       const month = new Date(now)
       month.setMonth(now.getMonth() - i)
       const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`
-      const totalMinutes = monthlyData[monthKey] || 0
-      months.push({ month: monthKey, hours: Math.round((totalMinutes / 60) * 100) / 100 })
+      const totalSeconds = monthlyData[monthKey] || 0
+      months.push({ month: monthKey, hours: Math.round((totalSeconds / 3600) * 100) / 100 })
     }
 
     return { months }
