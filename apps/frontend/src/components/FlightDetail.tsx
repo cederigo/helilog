@@ -4,6 +4,7 @@ import { flightApi, flightKeys } from '../lib/api'
 import { formatDateTime, formatDuration, formatOptional } from '../lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import TelemetryChart from './TelemetryChart'
 
 export default function FlightDetail() {
   const { id } = useParams()
@@ -37,8 +38,8 @@ export default function FlightDetail() {
   ]
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-6">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           ← Back
         </Button>
@@ -69,6 +70,7 @@ export default function FlightDetail() {
           </dl>
         </CardContent>
       </Card>
+      <TelemetryChart flightId={flightId} />
     </div>
   )
 }

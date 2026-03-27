@@ -73,6 +73,12 @@ export const flightApi = {
     const res = await client.api.flights[':id'].$delete({ param: { id: String(id) } })
     return res.json()
   },
+  getTelemetry: async (id: number) => {
+    const res = await client.api.flights[':id'].telemetry.$get({ param: { id: String(id) } })
+    const body = await res.json()
+    if ('error' in body) throw new Error((body as { error: string }).error)
+    return body
+  },
 }
 
 // Stats API
@@ -124,6 +130,7 @@ export const modelKeys = {
 export const flightKeys = {
   all: (params?: FlightQueryInput) => ['flights', params ?? {}] as const,
   detail: (id: number) => ['flights', id] as const,
+  telemetry: (id: number) => ['flights', id, 'telemetry'] as const,
 }
 
 export const statsKeys = {

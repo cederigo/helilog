@@ -50,4 +50,10 @@ export class FlightService {
 
     await this.flights.delete(id)
   }
+
+  async getTelemetry(flightId: number) {
+    const flight = await this.flights.findById(flightId)
+    if (!flight) throw new FlightNotFoundError(flightId)
+    return this.flights.findTelemetryByFlightId(flightId)
+  }
 }

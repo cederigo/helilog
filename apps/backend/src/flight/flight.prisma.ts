@@ -81,4 +81,11 @@ export class PrismaFlightRepository implements FlightRepository {
       include: { model: { select: { id: true, name: true } } },
     })
   }
+
+  async findTelemetryByFlightId(flightId: number) {
+    return this.prisma.flightTelemetryPoint.findMany({
+      where: { flightId },
+      orderBy: { timestamp: 'asc' },
+    })
+  }
 }

@@ -1,4 +1,5 @@
 import { build } from 'esbuild'
+import { builtinModules } from 'node:module'
 
 await build({
   entryPoints: ['src/index.ts'],
@@ -6,5 +7,13 @@ await build({
   platform: 'node',
   format: 'esm',
   outfile: 'dist/index.js',
-  external: ['@prisma/client', '@prisma/adapter-libsql', '@libsql/client', 'dotenv'],
+  external: [
+    ...builtinModules,
+    ...builtinModules.map((m) => `node:${m}`),
+    '@prisma/client',
+    '@prisma/adapter-libsql',
+    '@libsql/client',
+    'dotenv',
+    'cheerio',
+  ],
 })

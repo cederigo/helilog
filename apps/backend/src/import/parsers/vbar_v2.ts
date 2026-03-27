@@ -286,22 +286,43 @@ function parseTelemetryCsv(content: string): ParsedTelemetryPoint[] {
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l)
-  // First line is the header; data starts at index 1
-  const telemetry: ParsedTelemetryPoint[] = []
+  // First line is the header; data starts at index 1.
+  // Multiple rows may share the same second — average them into one point per second.
+  const buckets = new Map<number, ParsedTelemetryPoint[]>()
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(';')
     if (parts.length < 7) continue
-    telemetry.push({
-      timestamp: parseGermanDate(parts[0] ?? ''),
+    const timestamp = parseGermanDate(parts[0] ?? '')
+    const secondKey = Math.floor(timestamp.getTime() / 1000) * 1000
+    const point: ParsedTelemetryPoint = {
+      timestamp,
       current: parseFloat(parts[1] ?? '0') || 0,
       voltage: parseFloat(parts[2] ?? '0') || 0,
       chargeUsed: parseFloat(parts[3] ?? '0') || 0,
       headspeed: parseInt(parts[4] ?? '0') || 0,
       pwm: parseInt(parts[5] ?? '0') || 0,
       temp: parseFloat(parts[6] ?? '0') || 0,
-    })
+    }
+    const bucket = buckets.get(secondKey) ?? []
+    bucket.push(point)
+    buckets.set(secondKey, bucket)
   }
-  return telemetry
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([secondKey, points]) => {
+      const avg = (fn: (p: ParsedTelemetryPoint) => number) =>
+        Math.round((points.reduce((s, p) => s + fn(p), 0) / points.length) * 10) / 10
+      return {
+        timestamp: new Date(secondKey),
+        current: avg((p) => p.current),
+        voltage: avg((p) => p.voltage),
+        chargeUsed: avg((p) => p.chargeUsed),
+        headspeed: Math.round(points.reduce((s, p) => s + p.headspeed, 0) / points.length),
+        pwm: Math.round(points.reduce((s, p) => s + p.pwm, 0) / points.length),
+        temp: avg((p) => p.temp),
+      }
+    })
 }
 
 // -----------------------------------------------------------------

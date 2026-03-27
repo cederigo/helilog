@@ -6,6 +6,7 @@ import {
   FlightFilters,
 } from './flight.types'
 import { PaginationParams } from '../shared/types'
+import { FlightTelemetryPoint } from '@prisma/client'
 
 export interface FlightRepository {
   findMany(
@@ -19,4 +20,5 @@ export interface FlightRepository {
   countByModelId(modelId: number): Promise<number>
   sumDurationByModelId(modelId: number): Promise<number>
   findRecent(limit: number): Promise<FlightWithModel[]>
+  findTelemetryByFlightId(flightId: number): Promise<FlightTelemetryPoint[]>
 }

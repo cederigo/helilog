@@ -57,6 +57,16 @@ const flights = new Hono()
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   })
+  .get('/:id/telemetry', async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      const points = await flightService.getTelemetry(id)
+      return c.json(points)
+    } catch (e) {
+      if (e instanceof FlightNotFoundError) return c.json({ error: e.message }, 404)
+      throw e
+    }
+  })
   .get('/:id', async (c) => {
     try {
       const id = parseInt(c.req.param('id'))

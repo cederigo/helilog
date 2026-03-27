@@ -4,7 +4,7 @@ import prisma from '../db'
 import { parsers } from './parsers'
 import type { ParsedImport } from './import.types'
 
-const BASE_DATA_DIR = 'data/imports'
+const BASE_DATA_DIR = process.env.IMPORT_DATA_DIR ?? 'data/imports'
 
 export class ImportNotFoundError extends Error {
   constructor(id: number) {
