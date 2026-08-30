@@ -41,7 +41,7 @@ export default function Dashboard() {
           <Button
             size="sm"
             className="tracking-widest uppercase text-xs"
-            onClick={() => navigate('/models/new')}
+            onClick={() => navigate('/import')}
           >
             Log flight
           </Button>

@@ -2,6 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
 import FlightDetail from './components/FlightDetail'
 import ModelDetail from './components/ModelDetail'
+import ImportFlight, {
+  ImportChooser,
+  ManualImport,
+  EdgetxImport,
+  VbarImport,
+  ImportComplete,
+} from './components/import/ImportFlight'
 import './index.css'
 
 function App() {
@@ -30,6 +37,13 @@ function App() {
         <main className="max-w-5xl mx-auto px-6 py-8">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/import" element={<ImportFlight />}>
+              <Route index element={<ImportChooser />} />
+              <Route path="manual" element={<ManualImport />} />
+              <Route path="edgetx" element={<EdgetxImport />} />
+              <Route path="vbar" element={<VbarImport />} />
+              <Route path="result" element={<ImportComplete />} />
+            </Route>
             <Route path="/flights/:id" element={<FlightDetail />} />
             <Route path="/models/:id" element={<ModelDetail />} />
           </Routes>

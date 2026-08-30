@@ -5,7 +5,7 @@ import type { FlightQueryInput } from '@helilog/shared'
 export type { FlightQueryInput }
 
 // VITE_API_URL is the server root (e.g. http://localhost:3000)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const client = hc<AppType>(API_BASE_URL)
 
@@ -121,6 +121,48 @@ export const maintenanceApi = {
   },
 }
 
+// Import API
+export const importApi = {
+  list: async () => {
+    const res = await client.api.imports.$get()
+    return res.json()
+  },
+  getById: async (id: number) => {
+    const res = await client.api.imports[':id'].$get({ param: { id: String(id) } })
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
+  },
+  // POST /api/imports takes multipart/form-data (files[], format, options, description),
+  // which the Hono RPC client does not type — send a real FormData.
+  create: async (form: FormData) => {
+    const res = await fetch(`${API_BASE_URL}/api/imports`, { method: 'POST', body: form })
+    const body = await res.json()
+    if (!res.ok) throw new Error((body as { error?: string }).error ?? 'Import failed')
+    return body as Awaited<ReturnType<typeof importApi.getById>>
+  },
+  remove: async (id: number) => {
+    const res = await client.api.imports[':id'].$delete({ param: { id: String(id) } })
+    const body = await res.json()
+    if ('error' in body) throw new Error(body.error)
+    return body
+  },
+  // POST /api/imports/:id/reimport takes an untyped JSON body ({ options }) —
+  // the Hono RPC client does not model it, so use fetch directly.
+  reimport: async (id: number, options?: Record<string, string>) => {
+    const res = await fetch(`${API_BASE_URL}/api/imports/${id}/reimport`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options ? { options } : {}),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error((body as { error?: string }).error ?? 'Re-import failed')
+    return body as Awaited<ReturnType<typeof importApi.getById>>
+  },
+}
+
+export type ImportRecord = Awaited<ReturnType<typeof importApi.list>>[number]
+
 // Query key factories
 export const modelKeys = {
   all: ['models'] as const,
@@ -143,4 +185,9 @@ export const statsKeys = {
 export const maintenanceKeys = {
   forModel: (id: number) => ['maintenance', 'model', id] as const,
   alerts: ['maintenance', 'alerts'] as const,
+}
+
+export const importKeys = {
+  all: ['imports'] as const,
+  detail: (id: number) => ['imports', id] as const,
 }
