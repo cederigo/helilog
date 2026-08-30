@@ -7,6 +7,10 @@ export const createModelSchema = z.object({
 
 export const updateModelSchema = createModelSchema.partial()
 
+export const mergeModelSchema = z.object({
+  sourceId: z.number().int().positive(),
+})
+
 export const createFlightSchema = z.object({
   modelId: z.number().int().positive(),
   date: z.iso.datetime(),
@@ -45,6 +49,7 @@ export const createImportSchema = z.object({
 
 export type CreateModelInput = z.infer<typeof createModelSchema>
 export type UpdateModelInput = z.infer<typeof updateModelSchema>
+export type MergeModelInput = z.infer<typeof mergeModelSchema>
 export type CreateFlightInput = z.infer<typeof createFlightSchema>
 export type UpdateFlightInput = z.infer<typeof updateFlightSchema>
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>

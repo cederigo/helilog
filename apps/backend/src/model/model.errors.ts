@@ -12,6 +12,12 @@ export class DuplicateModelNameError extends AppError {
   }
 }
 
+export class ModelMergeIntoSelfError extends AppError {
+  constructor(id: number) {
+    super(`Cannot merge model ${id} into itself`)
+  }
+}
+
 export class ModelHasFlightsError extends AppError {
   readonly flightCount: number
 

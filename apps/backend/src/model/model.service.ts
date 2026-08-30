@@ -1,6 +1,11 @@
 import { ModelRepository } from './model.repository'
 import { Model, ModelDetail, CreateModelInput, UpdateModelInput } from './model.types'
-import { ModelNotFoundError, DuplicateModelNameError, ModelHasFlightsError } from './model.errors'
+import {
+  ModelNotFoundError,
+  DuplicateModelNameError,
+  ModelHasFlightsError,
+  ModelMergeIntoSelfError,
+} from './model.errors'
 import { FlightRepository } from '../flight/flight.repository'
 
 export class ModelService {
@@ -20,14 +25,14 @@ export class ModelService {
   }
 
   async create(input: CreateModelInput): Promise<Model> {
-    const existing = await this.models.findByName(input.name)
+    const existing = await this.models.findByNormalizedName(input.name)
     if (existing) throw new DuplicateModelNameError(input.name)
     return this.models.create(input)
   }
 
   async update(id: number, input: UpdateModelInput): Promise<Model> {
     if (input.name) {
-      const existing = await this.models.findByName(input.name)
+      const existing = await this.models.findByNormalizedName(input.name)
       if (existing && existing.id !== id) {
         throw new DuplicateModelNameError(input.name)
       }
@@ -35,6 +40,19 @@ export class ModelService {
     const model = await this.models.findById(id)
     if (!model) throw new ModelNotFoundError(id)
     return this.models.update(id, input)
+  }
+
+  async merge(targetId: number, sourceId: number): Promise<ModelDetail> {
+    if (targetId === sourceId) throw new ModelMergeIntoSelfError(targetId)
+
+    const target = await this.models.findById(targetId)
+    if (!target) throw new ModelNotFoundError(targetId)
+
+    const source = await this.models.findById(sourceId)
+    if (!source) throw new ModelNotFoundError(sourceId)
+
+    await this.models.merge(targetId, sourceId)
+    return this.getById(targetId)
   }
 
   async delete(id: number): Promise<void> {

@@ -1,8 +1,13 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { modelService } from '../container'
-import { createModelSchema, updateModelSchema } from '@helilog/shared'
-import { ModelNotFoundError, DuplicateModelNameError, ModelHasFlightsError } from './model.errors'
+import { createModelSchema, updateModelSchema, mergeModelSchema } from '@helilog/shared'
+import {
+  ModelNotFoundError,
+  DuplicateModelNameError,
+  ModelHasFlightsError,
+  ModelMergeIntoSelfError,
+} from './model.errors'
 
 const models = new Hono()
   .get('/', async (c) => {
@@ -38,6 +43,18 @@ const models = new Hono()
     } catch (e) {
       if (e instanceof ModelNotFoundError) return c.json({ error: e.message }, 404)
       if (e instanceof DuplicateModelNameError) return c.json({ error: e.message }, 400)
+      throw e
+    }
+  })
+  .post('/:id/merge', zValidator('json', mergeModelSchema), async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      const { sourceId } = c.req.valid('json')
+      const model = await modelService.merge(id, sourceId)
+      return c.json(model)
+    } catch (e) {
+      if (e instanceof ModelNotFoundError) return c.json({ error: e.message }, 404)
+      if (e instanceof ModelMergeIntoSelfError) return c.json({ error: e.message }, 400)
       throw e
     }
   })

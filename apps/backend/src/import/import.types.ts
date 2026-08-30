@@ -42,9 +42,13 @@ export interface VbarV2Options {
   password: string
 }
 
+// EdgeTX is a plain file upload — no options.
+export type EdgeTxOptions = Record<string, never>
+
 // Map format key → its concrete options type
 export interface ParserOptionsMap {
   vbar_v2: VbarV2Options
+  edgetx: EdgeTxOptions
 }
 
 export interface ImportParser<TOptions = Record<string, never>> {

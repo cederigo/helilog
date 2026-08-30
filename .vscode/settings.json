@@ -1,7 +1,5 @@
 {
   "chat.tools.terminal.autoApprove": {
-    "openspec": true,
-    "npm install": true,
     "npx prisma": true
   }
 }

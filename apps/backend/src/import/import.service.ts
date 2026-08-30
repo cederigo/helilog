@@ -2,6 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import prisma from '../db'
 import { parsers } from './parsers'
+import { normalizeModelName } from '../model/model.name'
 import type { ParsedImport } from './import.types'
 
 const BASE_DATA_DIR = process.env.IMPORT_DATA_DIR ?? 'data/imports'
@@ -32,18 +33,20 @@ async function saveFiles(dir: string, files: File[]): Promise<void> {
 
 async function persistParsedImport(importId: number, parsed: ParsedImport): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    // Create models
+    // Create models. Match against every existing model by a normalized name so
+    // that "Logo 700", "Logo-700" and "logo700" resolve to one model instead of
+    // spawning duplicates. The first-seen spelling stays as the stored name.
+    const existingModels = await tx.model.findMany()
+    const modelByKey = new Map(existingModels.map((m) => [normalizeModelName(m.name), m]))
     const modelIdMap = new Map<string, number>()
     for (const m of parsed.models) {
-      const created = await tx.model.upsert({
-        where: { name: m.name },
-        update: {},
-        create: {
-          name: m.name,
-          importId,
-        },
-      })
-      modelIdMap.set(m.name, created.id)
+      const key = normalizeModelName(m.name)
+      let model = modelByKey.get(key)
+      if (!model) {
+        model = await tx.model.create({ data: { name: m.name, importId } })
+        modelByKey.set(key, model)
+      }
+      modelIdMap.set(m.name, model.id)
     }
 
     // Create batteries
@@ -64,6 +67,11 @@ async function persistParsedImport(importId: number, parsed: ParsedImport): Prom
     for (const flight of parsed.flights) {
       const modelId = modelIdMap.get(flight.modelName)
       if (!modelId) continue
+
+      // Idempotency: skip a flight that already exists for this model at the same
+      // start time (e.g. re-uploading the same EdgeTX logs).
+      const existing = await tx.flight.findFirst({ where: { modelId, date: flight.date } })
+      if (existing) continue
 
       const created = await tx.flight.create({
         data: {
