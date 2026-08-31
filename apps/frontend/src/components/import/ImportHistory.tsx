@@ -50,6 +50,7 @@ export default function ImportHistory() {
               <TableHead className="text-xs uppercase tracking-widest">Source</TableHead>
               <TableHead className="text-xs uppercase tracking-widest">Date</TableHead>
               <TableHead className="text-xs uppercase tracking-widest">Flights</TableHead>
+              <TableHead className="text-xs uppercase tracking-widest">Batteries</TableHead>
               <TableHead className="text-xs uppercase tracking-widest">Models</TableHead>
               <TableHead className="text-xs uppercase tracking-widest" />
             </TableRow>
@@ -65,6 +66,7 @@ export default function ImportHistory() {
                     {formatDateTime(imp.createdAt)}
                   </TableCell>
                   <TableCell className="text-sm tabular-nums">{imp.counts.flights}</TableCell>
+                  <TableCell className="text-sm tabular-nums">{imp.counts.batteries}</TableCell>
                   <TableCell className="text-sm tabular-nums">{imp.counts.models}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
@@ -101,7 +103,7 @@ export default function ImportHistory() {
                 </TableRow>
                 {reimportId === imp.id && (
                   <TableRow>
-                    <TableCell colSpan={5} className="bg-muted/40">
+                    <TableCell colSpan={6} className="bg-muted/40">
                       <VbarCredentialsForm
                         submitLabel="Re-import"
                         onSubmit={(creds) =>

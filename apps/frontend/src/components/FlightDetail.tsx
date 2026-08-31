@@ -27,6 +27,12 @@ export default function FlightDetail() {
     { label: 'Date', value: formatDateTime(flight.date) },
     { label: 'Duration', value: formatDuration(flight.duration) },
     { label: 'Model', value: flight.model?.name ?? `Model #${flight.modelId}` },
+    {
+      label: 'Battery',
+      value: flight.battery
+        ? `${flight.battery.name} (${flight.battery.capacity} mAh · ${flight.battery.cells}S)`
+        : '—',
+    },
     { label: 'Max RPM', value: formatOptional(flight.maxRPM, (v) => `${v.toLocaleString()} rpm`) },
     { label: 'Max Power', value: formatOptional(flight.maxPower, (v) => `${v.toFixed(1)} W`) },
     { label: 'Max Current', value: formatOptional(flight.maxCurrent, (v) => `${v.toFixed(1)} A`) },

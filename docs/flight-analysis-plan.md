@@ -90,12 +90,12 @@ fixture arrays.
 Constants (module-level, named):
 
 ```ts
-const NOMINAL_V_PER_CELL = 3.85   // for cell-count inference from resting voltage
-const CUTOFF_V_PER_CELL = 3.5     // "capacity to cutoff" reference point
-const LOAD_CURRENT_MIN_A = 5      // rows below this are treated as idle/unloaded
-const MIN_LOAD_ROWS = 30          // need at least this many loaded rows to fit IR
-const MIN_CURRENT_SPREAD_A = 15   // p90-p10 current spread required to trust IR
-const IR_SANITY_MAX_OHM = 0.2     // whole-pack; reject fits outside (0, this)
+const NOMINAL_V_PER_CELL = 3.85 // for cell-count inference from resting voltage
+const CUTOFF_V_PER_CELL = 3.5 // "capacity to cutoff" reference point
+const LOAD_CURRENT_MIN_A = 5 // rows below this are treated as idle/unloaded
+const MIN_LOAD_ROWS = 30 // need at least this many loaded rows to fit IR
+const MIN_CURRENT_SPREAD_A = 15 // p90-p10 current spread required to trust IR
+const IR_SANITY_MAX_OHM = 0.2 // whole-pack; reject fits outside (0, this)
 ```
 
 ### 1. Cell count
@@ -133,7 +133,7 @@ regression result on clean data.
 
 - `minVoltsPerCell = min(voltage) / cells` over loaded rows.
 - `capacityToCutoff`: `chargeUsed` at the first row where `voltage / cells <=
-  CUTOFF_V_PER_CELL`; null if never reached.
+CUTOFF_V_PER_CELL`; null if never reached.
 - `mahPerMinute = chargeUsed_last / (duration / 60)` — weak style signal, cheap
   to keep.
 

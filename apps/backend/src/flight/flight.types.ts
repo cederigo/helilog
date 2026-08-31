@@ -2,7 +2,7 @@ import type {
   CreateFlightInput as SharedCreateFlightInput,
   FlightQueryInput as SharedFlightQueryInput,
 } from '@helilog/shared'
-import type { Flight } from '@prisma/client'
+import type { Battery, Flight } from '@prisma/client'
 
 export type { Flight }
 export interface FlightWithModel extends Omit<Flight, 'model'> {
@@ -10,6 +10,7 @@ export interface FlightWithModel extends Omit<Flight, 'model'> {
     id: number
     name: string
   }
+  battery?: Battery | null
 }
 
 export type CreateFlightInput = Omit<SharedCreateFlightInput, 'date'> & {

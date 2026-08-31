@@ -24,14 +24,26 @@ import type {
 // The download phase (inside parse()) writes:
 //   F<id>_event.csv      – event log textarea content
 //   F<id>_telemetry.csv  – telemetry textarea content (only when present)
+//   <bat-id>_log.csv     – per-battery flight-log CSV (flightno → battery link)
 //
 // Reimport: if F*_event.csv files already exist in rawDataPath the download
-// phase is skipped and the parser re-reads the saved files directly.
+// phase is skipped and the parser re-reads the saved files directly. Battery
+// logs are always re-downloaded (a pack's log grows on every reuse); pack
+// name/capacity/cells come from the overview page and are never persisted.
 
 const LOGIN_URL = 'https://www.vstabi.info/de/user/login'
 const CLOUD_URL = 'https://www.vstabi.info/de/cloud'
 const PAGE_SIZE = 30
 const FETCH_DELAY_MS = 200
+
+// Battery overview page + per-battery flight-log CSV. Each CSV row carries a
+// flightno column (the same numeric id used for F<id>_event.csv), so a flight is
+// linked to its battery by an exact id join, no date matching required.
+//
+// The CSV download endpoint comes from the "Download" form on the battery detail
+// page: GET node/2243?view=-1&file=<bat-id>&Sid=<sid>. node/2243 is a fixed
+// endpoint; the form's `file` field is the battery id (e.g. "bt_16").
+const BATTERY_LOG_URL = 'https://www.vstabi.info/node/2243'
 
 // -----------------------------------------------------------------
 // Errors
@@ -134,7 +146,7 @@ async function fetchAllFlightIds(cookie: string): Promise<{ flightIds: number[];
 
       // Extract Sid from the first href that contains it
       if (!sid) {
-        const sidMatch = href.match(/Sid=([A-Z0-9]+)/)
+        const sidMatch = href.match(/[?&]Sid=([A-Za-z0-9]+)/)
         if (sidMatch) sid = sidMatch[1]
       }
     }
@@ -191,6 +203,118 @@ async function downloadFlights(
     if (telemetry) {
       fs.writeFileSync(path.join(destDir, `F${flightId}_telemetry.csv`), telemetry, 'utf8')
     }
+  }
+}
+
+// -----------------------------------------------------------------
+// Battery overview list + per-battery flight-log CSV download
+// -----------------------------------------------------------------
+
+export interface BatteryInfo {
+  id: string // "bt_14" — the cloud's battery identifier
+  name: string // user-assigned pack name
+  capacity: number // mAh
+  cells: number
+}
+
+function batteryLogFileName(id: string): string {
+  return `${id.replace(/[^\w-]/g, '')}_log.csv`
+}
+
+// Text of a "<line1><br><line2>" cell up to the first <br>, whitespace-collapsed.
+function firstLine(cellHtml: string): string {
+  const head = cellHtml.split(/<br\s*\/?>/i)[0] ?? ''
+  return cheerio.load(head).text().replace(/\s+/g, ' ').trim()
+}
+
+// Parse the "All batteries overview" table. Each battery row holds cells +
+// capacity, the pack name, and a "Details" link carrying name=bt_<n>. The pack
+// name/capacity/cells live only here — the flight-log CSV does not repeat them.
+function parseBatteryListHtml(html: string): BatteryInfo[] {
+  const $ = cheerio.load(html)
+  const entries: BatteryInfo[] = []
+  const seen = new Set<string>()
+
+  $('a[href*="action=edit_batt"]').each((_, el) => {
+    const href = $(el).attr('href') ?? ''
+    const idMatch = href.match(/[?&]name=(bt_\d+)/)
+    if (!idMatch) return
+    const id = idMatch[1]
+    if (seen.has(id)) return
+
+    // Row layout: td[0] "<n> Cells<br><cap> mAh", td[1] "<name><br><username>".
+    const tds = $(el).closest('tr').find('td')
+    const cellsCap = tds.eq(0).text()
+    const capacityMatch = cellsCap.match(/([\d.,']+)\s*mAh/i)
+    const cellsMatch = cellsCap.match(/(\d+)\s*(?:Cells|Zellen)/i)
+    const name = firstLine(tds.eq(1).html() ?? '')
+
+    seen.add(id)
+    entries.push({
+      id,
+      name: name || id,
+      capacity: capacityMatch ? Math.round(Number(capacityMatch[1].replace(/[.,']/g, ''))) : 0,
+      cells: cellsMatch ? parseInt(cellsMatch[1]) : 0,
+    })
+  })
+
+  return entries
+}
+
+// List phase — mirrors fetchAllFlightIds. Paginates the battery overview,
+// collecting one BatteryInfo per battery id plus the session Sid from a "Details"
+// href. Pure network, nothing persisted: the pack name/capacity/cells it reads
+// exist only here and are carried in memory into the ParsedImport.
+async function fetchAllBatteryInfos(
+  cookie: string,
+): Promise<{ batteries: BatteryInfo[]; sid: string }> {
+  const all: BatteryInfo[] = []
+  const seen = new Set<string>()
+  let sid = ''
+  let start = 0
+
+  while (true) {
+    // ?action=battlist defaults to the logged-in account — no Aid needed.
+    const url = `${CLOUD_URL}?action=battlist&start=${start}`
+    const res = await fetch(url, { headers: { Cookie: cookie } })
+    const html = await res.text()
+
+    if (!sid) {
+      const sidMatch = html.match(/[?&]Sid=([A-Za-z0-9]+)/)
+      if (sidMatch) sid = sidMatch[1]
+    }
+
+    const fresh = parseBatteryListHtml(html).filter((e) => !seen.has(e.id))
+    if (fresh.length === 0) break
+    for (const e of fresh) {
+      seen.add(e.id)
+      all.push(e)
+    }
+    start += PAGE_SIZE
+    await sleep(FETCH_DELAY_MS)
+  }
+
+  return { batteries: all, sid }
+}
+
+// Download phase — mirrors downloadFlights. Fetches one flight-log CSV per
+// battery id. Unlike the immutable per-flight pages, a pack's log grows every
+// time it is reused, so these are always re-fetched (no skip-if-exists).
+async function downloadBatteryLogs(
+  ids: string[],
+  cookie: string,
+  destDir: string,
+  sid: string,
+): Promise<void> {
+  fs.mkdirSync(destDir, { recursive: true })
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    console.log(`Downloading battery log ${id} (${i + 1} of ${ids.length})...`)
+    if (i > 0) await sleep(FETCH_DELAY_MS)
+    const url = `${BATTERY_LOG_URL}?view=-1&file=${id}&Sid=${sid}`
+    const res = await fetch(url, { headers: { Cookie: cookie } })
+    const csv = await res.text()
+    fs.writeFileSync(path.join(destDir, batteryLogFileName(id)), csv, 'utf8')
   }
 }
 
@@ -371,11 +495,77 @@ export function parseCsvFiles(rawDataPath: string): ParsedImport {
       maxRPM,
       chargeUsed,
       telemetry,
+      sourceId: flightId, // "F<flightno>" — join key for battery matching
     })
   }
 
   const models = Array.from(modelNames).map((name) => ({ name }))
   return { models, flights, batteries: [] }
+}
+
+// -----------------------------------------------------------------
+// Battery flight-log parsing + flight matching
+// -----------------------------------------------------------------
+
+export interface ParsedBatteryWithFlights extends BatteryInfo {
+  flightNos: number[]
+}
+
+// Collect the flightno of every row in a battery flight-log CSV. Rows are
+// semicolon-separated with no header:
+//   usedAt;cFull;cUsed;flightTime;uMin;iMax;uEmpty;batteryHwId;flightno;model
+export function parseBatteryLogCsv(content: string): number[] {
+  const nos = new Set<number>()
+  for (const line of content.split('\n')) {
+    const parts = line.split(';')
+    if (parts.length < 9) continue
+    const no = parseInt(parts[8])
+    if (!isNaN(no)) nos.add(no)
+  }
+  return [...nos]
+}
+
+// Pair each in-memory BatteryInfo with the flightNos from its downloaded
+// <bat-id>_log.csv on disk. Mirrors parseCsvFiles: reads only the saved CSVs.
+export function readBatteryLogs(
+  rawDataPath: string,
+  infos: BatteryInfo[],
+): ParsedBatteryWithFlights[] {
+  return infos.map((info) => {
+    const csvPath = path.join(rawDataPath, batteryLogFileName(info.id))
+    const flightNos = fs.existsSync(csvPath)
+      ? parseBatteryLogCsv(fs.readFileSync(csvPath, 'utf8'))
+      : []
+    return { ...info, flightNos }
+  })
+}
+
+// Set flight.batteryName by joining flight.sourceId ("F<flightno>") against each
+// battery's flightNos. Mutates the flights in place.
+export function annotateFlightsWithBatteries(
+  flights: ParsedFlight[],
+  batteries: ParsedBatteryWithFlights[],
+): void {
+  const byFlightNo = new Map<number, string>()
+  for (const battery of batteries) {
+    for (const no of battery.flightNos) {
+      const existing = byFlightNo.get(no)
+      if (existing && existing !== battery.name) {
+        console.warn(
+          `vbar_v2: flight ${no} is claimed by batteries "${existing}" and "${battery.name}"; keeping "${existing}"`,
+        )
+        continue
+      }
+      byFlightNo.set(no, battery.name)
+    }
+  }
+
+  for (const flight of flights) {
+    const m = flight.sourceId?.match(/^F(\d+)$/)
+    if (!m) continue
+    const name = byFlightNo.get(parseInt(m[1]))
+    if (name) flight.batteryName = name
+  }
 }
 
 // -----------------------------------------------------------------
@@ -397,6 +587,26 @@ export const vbarV2Parser: ImportParser<VbarV2Options> = {
     console.log(`Retrieved ${flightIds.length} flight IDs. Starting download of flight data...`)
     await downloadFlights(flightIds, cookie, rawDataPath, sid)
 
-    return parseCsvFiles(rawDataPath)
+    const parsed = parseCsvFiles(rawDataPath)
+
+    // Battery phase: overview list → per-battery flight-log CSV → flight links.
+    // Pack metadata stays in memory (never written to disk).
+    try {
+      const { batteries: infos, sid: battSid } = await fetchAllBatteryInfos(cookie)
+      console.log(`Retrieved ${infos.length} batteries. Downloading battery logs...`)
+      await downloadBatteryLogs(
+        infos.map((b) => b.id),
+        cookie,
+        rawDataPath,
+        battSid || sid,
+      )
+      const batteries = readBatteryLogs(rawDataPath, infos)
+      annotateFlightsWithBatteries(parsed.flights, batteries)
+      parsed.batteries = batteries.map(({ name, capacity, cells }) => ({ name, capacity, cells }))
+    } catch (e) {
+      console.warn('vbar_v2: battery extraction failed, continuing without batteries', e)
+    }
+
+    return parsed
   },
 }

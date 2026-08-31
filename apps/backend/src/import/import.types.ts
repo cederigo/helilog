@@ -22,6 +22,8 @@ export interface ParsedFlight {
   maxRPM?: number
   chargeUsed?: number
   telemetry: ParsedTelemetryPoint[]
+  batteryName?: string // links to ParsedBattery.name (resolved at persist time)
+  sourceId?: string // parser-local flight id (e.g. "F1751024269"); not persisted
 }
 
 export interface ParsedBattery {

@@ -46,7 +46,7 @@ export class PrismaFlightRepository implements FlightRepository {
   async findById(id: number): Promise<FlightWithModel | null> {
     return this.prisma.flight.findUnique({
       where: { id },
-      include: { model: true },
+      include: { model: true, battery: true },
     })
   }
 

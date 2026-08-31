@@ -50,15 +50,18 @@ model Flight {
   chargeUsed Float? // mAh consumed during flight
   maxRPM       Int?   // maximum headspeed during flight
   importId     Int?
+  batteryId    Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   model       Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
   import       Import?    @relation(fields: [importId], references: [id], onDelete: Cascade)
+  battery      Battery?   @relation(fields: [batteryId], references: [id], onDelete: SetNull)
   telemetry    FlightTelemetryPoint[]
 
   @@index([modelId])
   @@index([date])
+  @@index([batteryId])
 }
 
 model FlightTelemetryPoint {
@@ -87,6 +90,7 @@ model Battery {
   updatedAt DateTime @updatedAt
 
   import    Import?  @relation(fields: [importId], references: [id], onDelete: Cascade)
+  flights   Flight[]
 }
 
 model MaintenanceRecord {

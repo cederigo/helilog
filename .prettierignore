@@ -3,3 +3,4 @@ node_modules/
 *.db
 pnpm-lock.yaml
 apps/backend/src/generated/
+apps/backend/data/

@@ -49,9 +49,10 @@ async function persistParsedImport(importId: number, parsed: ParsedImport): Prom
       modelIdMap.set(m.name, model.id)
     }
 
-    // Create batteries
+    // Create batteries, keeping a name → id map for flight linking below.
+    const batteryIdMap = new Map<string, number>()
     for (const battery of parsed.batteries) {
-      await tx.battery.upsert({
+      const row = await tx.battery.upsert({
         where: { name: battery.name },
         update: {},
         create: {
@@ -61,6 +62,7 @@ async function persistParsedImport(importId: number, parsed: ParsedImport): Prom
           importId,
         },
       })
+      batteryIdMap.set(battery.name, row.id)
     }
 
     // Create flights + telemetry
@@ -68,15 +70,24 @@ async function persistParsedImport(importId: number, parsed: ParsedImport): Prom
       const modelId = modelIdMap.get(flight.modelName)
       if (!modelId) continue
 
+      const batteryId = flight.batteryName ? (batteryIdMap.get(flight.batteryName) ?? null) : null
+
       // Idempotency: skip a flight that already exists for this model at the same
-      // start time (e.g. re-uploading the same EdgeTX logs).
+      // start time (e.g. re-uploading the same EdgeTX logs). Backfill the battery
+      // link when a prior import created the flight without one.
       const existing = await tx.flight.findFirst({ where: { modelId, date: flight.date } })
-      if (existing) continue
+      if (existing) {
+        if (batteryId && existing.batteryId == null) {
+          await tx.flight.update({ where: { id: existing.id }, data: { batteryId } })
+        }
+        continue
+      }
 
       const created = await tx.flight.create({
         data: {
           modelId,
           importId,
+          batteryId,
           date: flight.date,
           duration: flight.duration,
           minVoltage: flight.minVoltage,
@@ -106,6 +117,10 @@ async function persistParsedImport(importId: number, parsed: ParsedImport): Prom
 }
 
 async function deleteLinkedEntities(importId: number): Promise<void> {
+  // Flights go before batteries so this import's own flights never block the
+  // battery delete. A battery may still be referenced by flights from *other*
+  // imports (batteries are upserted by name across imports) — the Flight.batteryId
+  // FK is onDelete: SetNull, so those links are cleared rather than cascaded.
   await prisma.$transaction([
     prisma.flightTelemetryPoint.deleteMany({
       where: { flight: { importId } },
